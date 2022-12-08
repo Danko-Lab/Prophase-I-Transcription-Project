@@ -1,0 +1,162 @@
+Date: 01/13/22
+Directory: /local/storage/projects/prophaseI/MYBandBRDT
+Purpose: Test enrichment of MYB and BRDT binding at paused genes
+Source: 1. MYB https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSM1087281 2. BRDT https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSM2597340
+
+################################################################################################
+liftover
+################################################################################################
+
+##MYB##
+sort -k1,1 -k2,2n 201.mm.wild.type.42.rep1.chipAMYB.peaks.bed > MYBpeaksmm9.sorted.bed
+
+awk 'BEGIN{OFS="\t"};{print $1,$2,$3}' MYBpeaksmm9.sorted.bed > MYBpeaksmm9.sorted2.bed
+
+liftOver MYBpeaksmm9.sorted2.bed mm9ToMm10.over.chain MYBpeaksmm10.sorted.bed MYBunlifted.bed
+
+sort -k1,1 -k2,2n MYBpeaksmm10.sorted.bed > MYBpeaksmm10.sorted2.bed
+
+
+##BRDT##
+
+awk '{if (NR!=1) {print}}' GSM2597340_mm8_Pachytene_spermatocytes_WT_Brdt_SICER_peaks_FDR10.bed > Brdtpeaksmm8.sorted.bed
+
+sort -k1,1 -k2,2n Brdtpeaksmm8.sorted.bed > Brdtpeaksmm8.sorted2.bed
+
+
+liftOver Brdtpeaksmm8.sorted.bed mm8ToMm9.over.chain Brdtpeaksmm9.sorted.bed BRDTmm9unlifted.bed
+
+liftOver Brdtpeaksmm9.sorted.bed mm9ToMm10.over.chain Brdtpeaksmm10.sorted.bed BRDTmm10unlifted.bed
+
+################################################################################################
+MYB in clusters and TSSs
+################################################################################################
+
+bedtools merge -i MYBpeaksmm10.sorted2.bed > MYBpeaksmm10.sorted2.merge.bed
+
+###Use This###
+bedtools intersect -u -a /local/storage/projects/prophaseI/data/atacseq_genrich/Votingscript/tus.cluster1.positions.bed -b MYBpeaksmm10.sorted2.bed > intersectMYBcluster1.bed
+intersect: 1367 not: 126
+
+bedtools intersect -u -a /local/storage/projects/prophaseI/data/atacseq_genrich/Votingscript/tus.cluster2.positions.bed -b MYBpeaksmm10.sorted2.bed > intersectMYBcluster2.bed
+intersect: 501 not: 265
+
+bedtools intersect -u -a /local/storage/projects/prophaseI/data/atacseq_genrich/Votingscript/final_tuspositions.bed -b MYBpeaksmm10.sorted2.bed > intersectMYBtus.bed
+intersect: 17938 not: 29088
+
+################################################################################################
+BRDT in clusters and TSSs
+################################################################################################
+
+bedtools intersect -u -a /local/storage/projects/prophaseI/data/atacseq_genrich/Votingscript/tus.cluster1.positions.bed -b Brdtpeaksmm10.sorted.bed > intersectBRDTcluster1.bed
+intersect: 617 not: 876
+
+bedtools intersect -u -a /local/storage/projects/prophaseI/data/atacseq_genrich/Votingscript/tus.cluster2.positions.bed -b Brdtpeaksmm10.sorted.bed > intersectBRDTcluster2.bed
+intersect: 77 no: 689
+
+bedtools intersect -u -a /local/storage/projects/prophaseI/data/atacseq_genrich/Votingscript/final_tuspositions.bed -b Brdtpeaksmm10.sorted.bed > intersectBRDTtus.bed
+intersect: 5074 not: 41952
+
+################################################################################################
+MYB and BRDT
+################################################################################################
+
+bedtools intersect -u -a intersectBRDTcluster1.bed -b intersectMYBcluster1.bed > intersectMYBandBRDTcluster1.bed
+##582
+
+bedtools intersect -u -a intersectBRDTcluster2.bed -b intersectMYBcluster2.bed > intersectMYBandBRDTcluster2.bed
+##68
+
+bedtools intersect -u -a intersectBRDTtus.bed -b intersectMYBtus.bed > intersectMYBandBRDTtus.bed
+##4649
+
+################################################################################################
+Pausing index for MYB, BRDT, and all other genes
+################################################################################################
+
+awk 'BEGIN{OFS="\t"};{print $1,$2,$3, $4}' final_tus.txt > final_tusgenes.txt
+awk '{if (NR!=1) {print}}' final_tusgenes.txt > finaltusgenes.bed
+
+###Get MYB bound genes###
+bedtools intersect -u -a finaltusgenes.bed -b MYBpeaksmm10.sorted2.bed > intersectMYBtusgenes.bed
+
+###Get BRDT bound genes###
+bedtools intersect -u -a finaltusgenes.bed -b Brdtpeaksmm10.sorted.bed > intersectBRDTtusgenes.bed
+
+
+###Get all other genes###
+bedtools intersect -v -a finaltusgenes.bed -b MYBpeaksmm10.sorted2.bed > noMYBgenes.bed
+
+bedtools intersect -v -a noMYBgenes.bed -b Brdtpeaksmm10.sorted.bed > noMYBorBRDTgenes.bed
+
+library(DESeq2)
+load(file = "/local/storage/projects/prophaseI/Limmaradnormalized/DESeq2.RData")
+load(file = "/local/storage/projects/prophaseI/Limmaradnormalized/counts.normalized.RData")
+
+##Gene names for each cluster##
+MYBgenes <- read.table("./intersectMYBtusgenes.bed", 
+                           header = F, stringsAsFactors = F, sep = "\t")
+
+BRDTgenes <- read.table("./intersectBRDTtusgenes.bed", 
+                           header = F, stringsAsFactors = F, sep = "\t")
+                           
+noMYBBRDTgenes <- read.table("./noMYBorBRDTgenes.bed", 
+                           header = F, stringsAsFactors = F, sep = "\t")
+
+##Get averages for each region for each stage##
+
+LZ.TSS.nor <- as.data.frame(rowMeans(counts.normalized[, 5:8]))
+LZ.body.nor <- as.data.frame(rowMeans(counts.normalized[, 17:20]))
+LZ.polyA.nor <- as.data.frame(rowMeans(counts.normalized[, 29:32]))
+
+P.TSS.nor <- as.data.frame(rowMeans(counts.normalized[, 9:12]))
+P.body.nor <- as.data.frame(rowMeans(counts.normalized[, 21:24]))
+P.polyA.nor <- as.data.frame(rowMeans(counts.normalized[, 33:36]))
+
+D.TSS.nor <- as.data.frame(rowMeans(counts.normalized[, 1:4]))
+D.body.nor <- as.data.frame(rowMeans(counts.normalized[, 13:16]))
+D.polyA.nor <- as.data.frame(rowMeans(counts.normalized[, 25:28]))   
+
+##Get pause##
+LZ.pause <- as.data.frame(LZ.TSS.nor/LZ.body.nor)
+P.pause <- as.data.frame(P.TSS.nor/P.body.nor)   
+
+##Get pause genes in each class##  
+  
+LZ.pause.myb <- as.data.frame(LZ.pause[rownames(LZ.pause) %in% MYBgenes[,4], ]) 
+LZ.pause.BRDT <- as.data.frame(LZ.pause[rownames(LZ.pause) %in% BRDTgenes[,4], ]) 
+LZ.pause.others <- as.data.frame(LZ.pause[rownames(LZ.pause) %in% noMYBBRDTgenes[,4], ]) 
+
+P.pause.myb <- as.data.frame(P.pause[rownames(P.pause) %in% MYBgenes[,4], ]) 
+P.pause.BRDT <- as.data.frame(P.pause[rownames(P.pause) %in% BRDTgenes[,4], ]) 
+P.pause.others <- as.data.frame(P.pause[rownames(P.pause) %in% noMYBBRDTgenes[,4], ]) 
+
+write.table(LZ.pause.myb, file = "./LZ.pause.myb.txt",
+            row.names = F, col.names = T, quote = F, sep = "\t")
+
+write.table(LZ.pause.BRDT, file = "./LZ.pause.BRDT.txt",
+            row.names = F, col.names = T, quote = F, sep = "\t")
+
+write.table(LZ.pause.others, file = "./LZ.pause.others.txt",
+            row.names = F, col.names = T, quote = F, sep = "\t")
+
+write.table(P.pause.myb, file = "./P.pause.myb.txt",
+            row.names = F, col.names = T, quote = F, sep = "\t")
+
+write.table(P.pause.BRDT, file = "./P.pause.BRDT.txt",
+            row.names = F, col.names = T, quote = F, sep = "\t")
+
+write.table(P.pause.others, file = "./P.pause.others.txt",
+            row.names = F, col.names = T, quote = F, sep = "\t")
+
+################################################################################################
+MYB motif and MYB chip overlap; compared to ATAC
+################################################################################################
+
+##MYB and ATAC
+bedtools intersect -u -a  /local/storage/projects/prophaseI/data/atacseq_genrich/Votingscript/P.peaks.sorted.gain.bed -b MYBpeaksmm10.sorted2.merge.bed > intersectMYBanddREGcluster1.bed
+
+
+###MYB chip and MYB motif
+bedtools intersect -u -a  /local/storage/projects/prophaseI/dREG_deseq2/Homerenrichment/motifscanDREG/MA0776_1_MYBL1_sites.bed -b MYBpeaksmm10.sorted2.merge.bed > intersectMYBanddREGcluster1.bed
+      
