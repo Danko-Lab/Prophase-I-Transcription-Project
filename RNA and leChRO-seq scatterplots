@@ -1,0 +1,597 @@
+#Directory: /local/storage/projects/prophaseI/Limmaradnormalized/proseqvsrnaseq
+#Date: 09/01/2021
+
+#####################################################################################
+#####Get RN FPKM of PRO-seq from DESeq2#####
+#####################################################################################
+library(DESeq2)
+load(file = "../DESeq2.RData")
+
+load("../bw.counts.RData")
+combine.dat <- cbind(pol2Counts,
+                     bodyCounts,
+                     polyACounts)
+colnames(combine.dat) <- c(paste0("pol2_", colnames(pol2Counts)),
+                           paste0("body_", colnames(bodyCounts)),
+                           paste0("polyA_", colnames(polyACounts)))
+
+condition <- do.call(rbind, strsplit(colnames(combine.dat), "_R"))[, 1]
+condition <- factor(condition)
+
+# group <- levels(condition)
+## condition1
+sample.info <- data.frame(condition = condition,
+                          row.names = colnames(combine.dat))
+dds <- DESeqDataSetFromMatrix(countData = combine.dat,
+                              colData = sample.info,
+                              design = ~ condition )
+#Size factors determined by bw library size/rad scaler;see excel file
+sizeFactors(dds) <- c(6697004,7470531,14690503,3711683,3176013,18807759,14145068,33563464,6470470,6181809,5708847,13023631,6697004,7470531,14690503,3711683,3176013,18807759,14145068,33563464,6470470,6181809,5708847,13023631,6697004,7470531,14690503,3711683,3176013,18807759,14145068,33563464,6470470,6181809,5708847,13023631)
+# dds <- DESeq(dds)
+dds <- DESeq(dds, fitType = "local")
+resultsNames(dds)
+
+load(file = "../counts.normalized.RData")
+
+counts.normalizedP <- counts.normalized[,21:24]
+counts.normalizedPaverage <- as.data.frame(rowMeans(counts.normalizedP, na.rm=TRUE))
+save(counts.normalizedPaverage, file = "./counts.normalizedPaverage.RData")
+
+counts.normalizedLZ <- counts.normalized[,17:20]
+counts.normalizedLZaverage <- as.data.frame(rowMeans(counts.normalizedLZ, na.rm=TRUE))
+save(counts.normalizedLZaverage, file = "./counts.normalizedLZaverage.RData")
+
+counts.normalizedD <- counts.normalized[,13:16]
+counts.normalizedDaverage <- as.data.frame(rowMeans(counts.normalizedD, na.rm=TRUE))
+save(counts.normalizedDaverage, file = "./counts.normalizedLZaverage.RData")
+
+#####################################################################################
+#####Get FPKM of RNA-seq from DESeq2#####
+#####################################################################################
+
+samples = as.data.frame(read.table("samples.txt", header = TRUE, stringsAsFactors=FALSE))
+samples$Condition <- factor(samples$Condition)
+samples
+
+library(tximport)
+library(readr)
+library(GenomicFeatures)
+library(biomaRt)
+library(DESeq2)
+library(ggplot2)
+library(gplots)
+library(ggrepel)
+library(tidyr)
+library(org.Mm.eg.db)
+library(tibble)
+
+gtf = "./gencode.vM25.annotation.gtf"
+
+txdb=makeTxDbFromGFF(gtf,
+                     format="gtf",
+                     organism="Mus musculus")
+                     
+k <- keys(txdb, keytype = "GENEID")
+df <- AnnotationDbi::select(txdb, keys = k, keytype = "GENEID", columns = "TXNAME")
+tx2gene <- df[, 2:1]
+head(tx2gene)
+
+setwd("./AllQuantFiles")
+base_dir = getwd()             
+files <- file.path(base_dir, samples$Sample)
+
+ txi <- tximport(files, 
+                type = "salmon", 
+                tx2gene = tx2gene)         
+            
+  identical(samples$sample,colnames(txi$counts))
+  
+  
+ddsRNA <- DESeqDataSetFromTximport(txi, samples, ~Condition) 
+ddsRNA <- ddsRNA[ rowSums(counts(ddsRNA)) > 1, ] 
+ddsRNA <- DESeq(ddsRNA)
+
+P.LZ <- results(ddsRNA, contrast=c("Condition", "Pachynema", "Leptonema/Zygonema"))
+summary(P.LZ)
+out of 25649 with nonzero total read count
+adjusted p-value < 0.1
+LFC > 0 (up)       : 5120, 20%
+LFC < 0 (down)     : 4568, 18%
+outliers [1]       : 30, 0.12%
+low counts [2]     : 5968, 23%
+(mean count < 3)
+[1] see 'cooksCutoff' argument of ?results
+[2] see 'independentFiltering' argument of ?results
+
+pdf("P_LZRNAseq.pdf")
+plotMA(P.LZ, alpha = 0.05, colNonSig = "gray67", colSig = "dark red")
+dev.off()
+
+D.LZ <- results(ddsRNA, contrast=c("Condition", "Diplonema", "Leptonema/Zygonema"))
+summary(D.LZ)
+out of 25649 with nonzero total read count
+adjusted p-value < 0.1
+LFC > 0 (up)       : 6571, 26%
+LFC < 0 (down)     : 6454, 25%
+outliers [1]       : 30, 0.12%
+low counts [2]     : 4973, 19%
+(mean count < 2)
+
+pdf("D_LZRNAseq.pdf")
+plotMA(D.LZ, alpha = 0.05, colNonSig = "gray67", colSig = "dark red")
+dev.off()
+
+counts.normalizedRNA <- as.data.frame(counts(ddsRNA, normalized = T))
+counts.normalizedRNAnames <- as.data.frame(gsub("\\..*","",rownames(counts.normalizedRNA)))
+counts.normalizedRNA2 <- as.data.frame(c(counts.normalizedRNAnames, counts.normalizedRNA))
+rownames(counts.normalizedRNA2) <- counts.normalizedRNA2[,1]
+counts.normalizedRNA2$symbol <- mapIds(org.Mm.eg.db,
+                            keys = rownames(counts.normalizedRNA2),
+                            column = "SYMBOL",
+                            keytype = "ENSEMBL",
+                            multiVals = "first")
+
+
+counts.normalizedP <- counts.normalizedRNA2[,8:10]
+counts.normalizedPRNAaverage <- as.data.frame(rowMeans(counts.normalizedP, na.rm=TRUE))
+counts.normalizedPRNAaverage$symbol <- mapIds(org.Mm.eg.db,
+                            keys = rownames(counts.normalizedPRNAaverage),
+                            column = "SYMBOL",
+                            keytype = "ENSEMBL",
+                            multiVals = "first")
+
+save(counts.normalizedPRNAaverage, file = "./counts.normalizedPRNAaverage.RData")
+
+counts.normalizedD <- counts.normalizedRNA2[,2:4]
+counts.normalizedDRNAaverage <- as.data.frame(rowMeans(counts.normalizedD, na.rm=TRUE))
+counts.normalizedDRNAaverage$symbol <- mapIds(org.Mm.eg.db,
+                            keys = rownames(counts.normalizedDRNAaverage),
+                            column = "SYMBOL",
+                            keytype = "ENSEMBL",
+                            multiVals = "first")
+
+save(counts.normalizedDRNAaverage, file = "./counts.normalizedDRNAaverage.RData")
+
+counts.normalizedLZ <- counts.normalizedRNA2[,5:7]
+counts.normalizedLZRNAaverage <- as.data.frame(rowMeans(counts.normalizedLZ, na.rm=TRUE))
+counts.normalizedLZRNAaverage$symbol <- mapIds(org.Mm.eg.db,
+                            keys = rownames(counts.normalizedLZRNAaverage),
+                            column = "SYMBOL",
+                            keytype = "ENSEMBL",
+                            multiVals = "first")
+
+save(counts.normalizedLZRNAaverage, file = "./counts.normalizedLZRNAaverage.RData")
+
+#####################################################################################
+#####Get P Scatterplot with normalized FPKM (no gene)#####
+#####################################################################################
+
+union.gene <- intersect(rownames(counts.normalizedPaverage),
+                                  (counts.normalizedPRNAaverage$symbol))
+                    
+
+RNAseq.geneP <- counts.normalizedPRNAaverage[match(union.gene, (counts.normalizedPRNAaverage$symbol)), ]
+PROseq.geneP <- counts.normalizedPaverage[match(union.gene, rownames(counts.normalizedPaverage)), ]
+
+plot.dat <- data.frame("RNAseq" = RNAseq.geneP[,1],
+						"PROseq" = PROseq.geneP)
+                    
+rownames(plot.dat) <- rownames(PROseq.geneP)
+plot.dat$RNAseq <- log(plot.dat$RNAseq)
+plot.dat$PROseq <- log(plot.dat$PROseq)
+plot.dat1 <- plot.dat[is.finite(rowSums(plot.dat)),]
+
+# 
+lm_eqn <- function(df){
+    m <- lm(RNAseq ~ PROseq, df);
+    f <- summary(m)$fstatistic;
+    p <- pf(f[1],f[2],f[3],lower.tail=F);
+    attributes(p) <- NULL;
+    eq <- substitute(italic(r)^2~"="~r2*","~~italic(P)~p,
+         list(r2 = format(summary(m)$r.squared, digits = 3),
+           p = ifelse(p < 1e-10, "< 1e-10", format(p, digits = 3))
+           ))
+    as.character(as.expression(eq));
+}
+library(ggplot2)
+library(cowplot)
+library(easyGgplot2)
+library(RColorBrewer)
+df <- data.frame(RNAseq = plot.dat1$RNAseq, PROseq = plot.dat1$PROseq,
+                 d = densCols(plot.dat1$RNAseq, plot.dat1$PROseq, 
+                             colramp = colorRampPalette(rev(brewer.pal(11,'Spectral')))))
+pdf("./RNA.PRO.PachyFPKMALLGENEJULY.pdf")
+	ggplot(df) +
+    geom_point(aes(RNAseq, PROseq, col = d), size = 2, alpha = 1) +
+    scale_color_identity() +
+    xlim(-3, 12) + ylim(-18, -5) + 
+    xlab("RNAseq FPKM") + 
+    ylab("PROseq FPKM") + 
+    ggtitle("P") +
+    theme(plot.title = element_text(size = 17, face = "bold"),
+         axis.text=element_text(size=17),
+         axis.title=element_text(size=17,face="bold")) +
+    geom_smooth(aes(RNAseq, PROseq), method = "lm", level=0.5, size = 0.3, linetype="dashed")
+dev.off()
+
+max((range(plot.dat1$PROseq)))
+min((range(plot.dat1$PROseq)))
+max((range(plot.dat1$RNAseq)))
+min((range(plot.dat1$RNAseq)))
+
+rnaseq.lm = lm(RNAseq ~ PROseq, data=plot.dat1)
+summary(rnaseq.lm)$r.squared
+
+cor.test(plot.dat1$PROseq, plot.dat1$RNAseq, method = 'pearson')
+
+	Pearson's product-moment correlation
+
+data:  plot.dat1$PROseq and plot.dat1$RNAseq
+t = 165.33, df = 13290, p-value < 2.2e-16
+alternative hypothesis: true correlation is not equal to 0
+95 percent confidence interval:
+ 0.8146436 0.8257686
+sample estimates:
+      cor 
+0.8202837 
+
+#####################################################################################
+#####Get LZ Scatterplot with normalized FPKM (no gene)#####
+#####################################################################################
+
+union.gene <- intersect(rownames(counts.normalizedLZaverage),
+                                  (counts.normalizedLZRNAaverage$symbol))
+                    
+
+RNAseq.geneLZ <- counts.normalizedLZRNAaverage[match(union.gene, (counts.normalizedLZRNAaverage$symbol)), ]
+PROseq.geneLZ <- counts.normalizedLZaverage[match(union.gene, rownames(counts.normalizedLZaverage)), ]
+
+plot.dat <- data.frame("RNAseq" = RNAseq.geneLZ[,1],
+						"PROseq" = PROseq.geneLZ)
+                    
+rownames(plot.dat) <- rownames(PROseq.geneLZ)
+plot.dat$RNAseq <- log(plot.dat$RNAseq)
+plot.dat$PROseq <- log(plot.dat$PROseq)
+plot.dat1 <- plot.dat[is.finite(rowSums(plot.dat)),]
+
+# 
+lm_eqn <- function(df){
+    m <- lm(RNAseq ~ PROseq, df);
+    f <- summary(m)$fstatistic;
+    p <- pf(f[1],f[2],f[3],lower.tail=F);
+    attributes(p) <- NULL;
+    eq <- substitute(italic(r)^2~"="~r2*","~~italic(P)~p,
+         list(r2 = format(summary(m)$r.squared, digits = 3),
+           p = ifelse(p < 1e-10, "< 1e-10", format(p, digits = 3))
+           ))
+    as.character(as.expression(eq));
+}
+library(ggplot2)
+library(cowplot)
+library(easyGgplot2)
+library(RColorBrewer)
+df <- data.frame(RNAseq = plot.dat1$RNAseq, PROseq = plot.dat1$PROseq,
+                 d = densCols(plot.dat1$RNAseq, plot.dat1$PROseq, 
+                             colramp = colorRampPalette(rev(brewer.pal(11,'Spectral')))))
+pdf("./RNA.PRO.LEPTOZYGOFPKMALLGENEJULY.pdf")
+	ggplot(df) +
+    geom_point(aes(RNAseq, PROseq, col = d), size = 2, alpha = 1) +
+    scale_color_identity() +
+    xlim(-3, 12) + ylim(-19, -7) + 
+    xlab("RNAseq FPKM") + 
+    ylab("PROseq FPKM") + 
+    ggtitle("LZ") +
+    theme(plot.title = element_text(size = 17, face = "bold"),
+         axis.text=element_text(size=17),
+         axis.title=element_text(size=17,face="bold")) +
+    geom_smooth(aes(RNAseq, PROseq), method = "lm", level=0.5, size = 0.3, linetype="dashed")
+dev.off()
+
+max((range(plot.dat1$PROseq)))
+min((range(plot.dat1$PROseq)))
+max((range(plot.dat1$RNAseq)))
+min((range(plot.dat1$RNAseq)))
+
+rnaseq.lm = lm(RNAseq ~ PROseq, data=plot.dat1)
+summary(rnaseq.lm)$r.squared
+
+cor.test(plot.dat1$PROseq, plot.dat1$RNAseq, method = 'pearson')
+
+	Pearson's product-moment correlation
+
+data:  plot.dat1$PROseq and plot.dat1$RNAseq
+t = 143.32, df = 13373, p-value < 2.2e-16
+alternative hypothesis: true correlation is not equal to 0
+95 percent confidence interval:
+ 0.7714829 0.7848508
+sample estimates:
+     cor 
+0.778255 
+
+#####################################################################################
+#####Get D Scatterplot with normalized FPKM (no gene)#####
+#####################################################################################
+
+union.gene <- intersect(rownames(counts.normalizedDaverage),
+                                  (counts.normalizedDRNAaverage$symbol))
+                    
+
+RNAseq.geneD <- counts.normalizedDRNAaverage[match(union.gene, (counts.normalizedDRNAaverage$symbol)), ]
+PROseq.geneD <- counts.normalizedDaverage[match(union.gene, rownames(counts.normalizedDaverage)), ]
+
+plot.dat <- data.frame("RNAseq" = RNAseq.geneD[,1],
+						"PROseq" = PROseq.geneD)
+                    
+rownames(plot.dat) <- rownames(PROseq.geneD)
+plot.dat$RNAseq <- log(plot.dat$RNAseq)
+plot.dat$PROseq <- log(plot.dat$PROseq)
+plot.dat1 <- plot.dat[is.finite(rowSums(plot.dat)),]
+
+# 
+lm_eqn <- function(df){
+    m <- lm(RNAseq ~ PROseq, df);
+    f <- summary(m)$fstatistic;
+    p <- pf(f[1],f[2],f[3],lower.tail=F);
+    attributes(p) <- NULL;
+    eq <- substitute(italic(r)^2~"="~r2*","~~italic(P)~p,
+         list(r2 = format(summary(m)$r.squared, digits = 3),
+           p = ifelse(p < 1e-10, "< 1e-10", format(p, digits = 3))
+           ))
+    as.character(as.expression(eq));
+}
+library(ggplot2)
+library(cowplot)
+library(easyGgplot2)
+library(RColorBrewer)
+df <- data.frame(RNAseq = plot.dat1$RNAseq, PROseq = plot.dat1$PROseq,
+                 d = densCols(plot.dat1$RNAseq, plot.dat1$PROseq, 
+                             colramp = colorRampPalette(rev(brewer.pal(11,'Spectral')))))
+pdf("./RNA.PRO.DIPLOFPKMALLGENEJULY.pdf")
+	ggplot(df) +
+    geom_point(aes(RNAseq, PROseq, col = d), size = 2, alpha = 1) +
+    scale_color_identity() +
+    xlim(-3, 12) + ylim(-18, -5) + 
+    xlab("RNAseq FPKM") + 
+    ylab("PROseq FPKM") + 
+    ggtitle("D") +
+    theme(plot.title = element_text(size = 17, face = "bold"),
+         axis.text=element_text(size=17),
+         axis.title=element_text(size=17,face="bold")) +
+    geom_smooth(aes(RNAseq, PROseq), method = "lm", level=0.5, size = 0.3, linetype="dashed")
+dev.off()
+
+max((range(plot.dat1$PROseq)))
+min((range(plot.dat1$PROseq)))
+max((range(plot.dat1$RNAseq)))
+min((range(plot.dat1$RNAseq)))
+
+rnaseq.lm = lm(RNAseq ~ PROseq, data=plot.dat1)
+summary(rnaseq.lm)$r.squared
+
+cor.test(plot.dat1$PROseq, plot.dat1$RNAseq, method = 'pearson')
+
+	Pearson's product-moment correlation
+
+data:  plot.dat1$PROseq and plot.dat1$RNAseq
+t = 149.94, df = 12689, p-value < 2.2e-16
+alternative hypothesis: true correlation is not equal to 0
+95 percent confidence interval:
+ 0.7931418 0.8056984
+sample estimates:
+      cor 
+0.7995074 
+
+#####################################################################################
+#####LZP log2fc scatterplots#####
+#####################################################################################
+#PRO
+body.P.LZ.rslt <- (results(dds, contrast=c("condition", "body_P", "body_LZ")))
+body.P.LZ.rslt$padj <- ifelse(is.na(body.P.LZ.rslt$padj), 1, body.P.LZ.rslt$padj)
+
+hits1 <- body.P.LZ.rslt[body.P.LZ.rslt$padj < 0.05, ] %>% rownames()
+save(hits1, file= "./hits1.RData")
+
+##RNA (DESeq2)
+samples
+resP_LZ <- results( ddsRNA, contrast = c("Condition", "Pachynema", "Leptonema/Zygonema"))
+head(resP_LZ)
+
+LZ.P.DESeq <- resP_LZ
+LZ.P.DESeq$padj <- ifelse(is.na(LZ.P.DESeq$padj), 1, LZ.P.DESeq$padj)
+hits2 <- LZ.P.DESeq[LZ.P.DESeq$padj < 0.05, ] %>% rownames()
+hits2 <- gsub("\\..*","",hits2)
+hits3 <- AnnotationDbi::select(org.Mm.eg.db, keys=hits2, columns="SYMBOL", 
+                                                       keytype="ENSEMBL")
+hits4 <- hits3[,2]
+save(hits4, file= "./hits4.RData")
+
+union.gene <- (union(hits1, hits4))
+save(union.gene, file="union.gene.RData")
+
+LZ.P.DESeqnames <- as.data.frame(gsub("\\..*","",rownames(LZ.P.DESeq)))
+LZ.P.DESeq <- as.data.frame(c(LZ.P.DESeqnames, LZ.P.DESeq))
+rownames(LZ.P.DESeq) <- LZ.P.DESeq[,1]
+LZ.P.DESeq$symbol <- mapIds(org.Mm.eg.db,
+                            keys = rownames(LZ.P.DESeq),
+                            column = "SYMBOL",
+                            keytype = "ENSEMBL",
+                            multiVals = "first")
+                                                    
+                                                       
+union.gene <- intersect(intersect(rownames(body.P.LZ.rslt),
+                                  (LZ.P.DESeq$symbol)),
+                        union.gene)
+
+RNAseq.DEgene <- LZ.P.DESeq[match(union.gene, (LZ.P.DESeq$symbol)), ]
+PROseq.DEgene <- body.P.LZ.rslt[match(union.gene, rownames(body.P.LZ.rslt)), ]
+
+plot.dat <- data.frame("RNAseq" = RNAseq.DEgene$log2FoldChange,
+						"PROseq" = PROseq.DEgene$log2FoldChange)
+                    
+rownames(plot.dat) <- rownames(PROseq.DEgene)
+plot.dat1 <- na.omit(plot.dat)
+plot.dat1 <- plot.dat1[plot.dat1$RNAseq > -24,]
+
+
+# 
+lm_eqn <- function(df){
+    m <- lm(RNAseq ~ PROseq, df);
+    f <- summary(m)$fstatistic;
+    p <- pf(f[1],f[2],f[3],lower.tail=F);
+    attributes(p) <- NULL;
+    eq <- substitute(italic(r)^2~"="~r2*","~~italic(P)~p,
+         list(r2 = format(summary(m)$r.squared, digits = 3),
+           p = ifelse(p < 1e-10, "< 1e-10", format(p, digits = 3))
+           ))
+    as.character(as.expression(eq));
+}
+library(ggplot2)
+library(cowplot)
+library(easyGgplot2)
+library(RColorBrewer)
+df <- data.frame(RNAseq = plot.dat1$RNAseq, PROseq = plot.dat1$PROseq,
+                 d = densCols(plot.dat1$RNAseq, plot.dat1$PROseq, 
+                             colramp = colorRampPalette(rev(brewer.pal(11,'Spectral')))))
+pdf("./RNA.PROLZPl2fcJULY.pdf")
+	ggplot(df) +
+    geom_point(aes(RNAseq, PROseq, col = d), size = 2, alpha = 1) +
+    scale_color_identity() +
+    xlim(-6,8) + ylim(-3, 7) + 
+    xlab("RNAseq FPKM") + 
+    ylab("PROseq FPKM") + 
+    ggtitle("P Vs. LZ") +
+    theme(plot.title = element_text(size = 17, face = "bold"),
+         axis.text=element_text(size=17),
+         axis.title=element_text(size=17,face="bold")) +
+    geom_smooth(aes(RNAseq, PROseq), method = "lm", level=0.5, size = 0.3, linetype="dashed")
+dev.off()
+
+max((range(plot.dat1$PROseq)))
+min((range(plot.dat1$PROseq)))
+max((range(plot.dat1$RNAseq)))
+min((range(plot.dat1$RNAseq)))
+
+rnaseq.lm = lm(RNAseq ~ PROseq, data=plot.dat1)
+summary(rnaseq.lm)$r.squared
+
+cor.test(plot.dat1$PROseq, plot.dat1$RNAseq, method = 'pearson')
+	Pearson's product-moment correlation
+
+data:  plot.dat1$PROseq and plot.dat1$RNAseq
+t = 56.469, df = 7579, p-value < 2.2e-16
+alternative hypothesis: true correlation is not equal to 0
+95 percent confidence interval:
+ 0.5281484 0.5598425
+sample estimates:
+      cor 
+0.5441896 
+
+n <- length(plot.dat1$RNAseq)
+sort(plot.dat1$RNAseq,partial=n-1)[n-1]
+
+#####################################################################################
+#####DLZ log2fc scatterplots#####
+#####################################################################################
+#PRO
+body.D.P.rslt <- (results(dds, contrast=c("condition", "body_D", "body_LZ")))
+body.D.P.rslt$padj <- ifelse(is.na(body.D.P.rslt$padj), 1, body.D.P.rslt$padj)
+
+hits1 <- body.D.P.rslt[body.D.P.rslt$padj < 0.05, ] %>% rownames()
+save(hits1, file= "./hits1.RData")
+
+##RNA (DESeq2)
+samples
+resD_P <- results( ddsRNA, contrast = c("Condition", "Diplonema", "Leptonema/Zygonema"))
+head(resD_P)
+
+D.P.DESeq <- resD_P
+D.P.DESeq$padj <- ifelse(is.na(D.P.DESeq$padj), 1, D.P.DESeq$padj)
+hits2 <- D.P.DESeq[D.P.DESeq$padj < 0.05, ] %>% rownames()
+hits2 <- gsub("\\..*","",hits2)
+hits3 <- AnnotationDbi::select(org.Mm.eg.db, keys=hits2, columns="SYMBOL", 
+                                                       keytype="ENSEMBL")
+hits4 <- hits3[,2]
+save(hits4, file= "./hits4.RData")
+
+union.gene <- (union(hits1, hits4))
+save(union.gene, file="union.gene.RData")
+
+D.P.DESeqnames <- as.data.frame(gsub("\\..*","",rownames(D.P.DESeq)))
+D.P.DESeq <- as.data.frame(c(D.P.DESeqnames, D.P.DESeq))
+rownames(D.P.DESeq) <- D.P.DESeq[,1]
+D.P.DESeq$symbol <- mapIds(org.Mm.eg.db,
+                            keys = rownames(D.P.DESeq),
+                            column = "SYMBOL",
+                            keytype = "ENSEMBL",
+                            multiVals = "first")
+                                                    
+                                                       
+union.gene <- intersect(intersect(rownames(body.D.P.rslt),
+                                  (D.P.DESeq$symbol)),
+                        union.gene)
+
+RNAseq.DEgene <- D.P.DESeq[match(union.gene, (D.P.DESeq$symbol)), ]
+PROseq.DEgene <- body.D.P.rslt[match(union.gene, rownames(body.D.P.rslt)), ]
+
+plot.dat <- data.frame("RNAseq" = RNAseq.DEgene$log2FoldChange,
+						"PROseq" = PROseq.DEgene$log2FoldChange)
+                    
+rownames(plot.dat) <- rownames(PROseq.DEgene)
+plot.dat1 <- na.omit(plot.dat)
+
+
+# 
+lm_eqn <- function(df){
+    m <- lm(RNAseq ~ PROseq, df);
+    f <- summary(m)$fstatistic;
+    p <- pf(f[1],f[2],f[3],lower.tail=F);
+    attributes(p) <- NULL;
+    eq <- substitute(italic(r)^2~"="~r2*","~~italic(P)~p,
+         list(r2 = format(summary(m)$r.squared, digits = 3),
+           p = ifelse(p < 1e-10, "< 1e-10", format(p, digits = 3))
+           ))
+    as.character(as.expression(eq));
+}
+library(ggplot2)
+library(cowplot)
+library(easyGgplot2)
+library(RColorBrewer)
+df <- data.frame(RNAseq = plot.dat1$RNAseq, PROseq = plot.dat1$PROseq,
+                 d = densCols(plot.dat1$RNAseq, plot.dat1$PROseq, 
+                             colramp = colorRampPalette(rev(brewer.pal(11,'Spectral')))))
+pdf("./RNA.PRODLZl2fcJULY.pdf")
+	ggplot(df) +
+    geom_point(aes(RNAseq, PROseq, col = d), size = 2, alpha = 1) +
+    scale_color_identity() +
+    xlim(-7, 10) + ylim(-5, 7) + 
+    xlab("RNAseq FPKM") + 
+    ylab("PROseq FPKM") + 
+    ggtitle("D Vs. LZ") +
+    theme(plot.title = element_text(size = 17, face = "bold"),
+         axis.text=element_text(size=17),
+         axis.title=element_text(size=17,face="bold")) +
+    geom_smooth(aes(RNAseq, PROseq), method = "lm", level=0.5, size = 0.3, linetype="dashed")
+dev.off()
+
+max((range(plot.dat1$PROseq)))
+min((range(plot.dat1$PROseq)))
+max((range(plot.dat1$RNAseq)))
+min((range(plot.dat1$RNAseq)))
+
+rnaseq.lm = lm(RNAseq ~ PROseq, data=plot.dat1)
+summary(rnaseq.lm)$r.squared
+
+cor.test(plot.dat1$PROseq, plot.dat1$RNAseq, method = 'pearson')
+	Pearson's product-moment correlation
+
+data:  plot.dat1$PROseq and plot.dat1$RNAseq
+t = 74.525, df = 8410, p-value < 2.2e-16
+alternative hypothesis: true correlation is not equal to 0
+95 percent confidence interval:
+ 0.6176170 0.6433628
+sample estimates:
+      cor 
+0.6306634 
+
+n <- length(plot.dat1$RNAseq)
+sort(plot.dat1$RNAseq,partial=n-1)[n-1]
