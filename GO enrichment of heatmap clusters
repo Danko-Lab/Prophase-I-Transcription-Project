@@ -1,0 +1,66 @@
+Directory: /local/storage/projects/prophaseI/Limmaradnormalized/GOanalysis
+Date: 08/17/2021
+
+##Get bed files in right format
+
+clust.result <- read.table("/local/storage/projects/prophaseI/Limmaradnormalized/Results_18_Aug_21/Clusters_Objects.tsv", 
+                           header = T, stringsAsFactors = F, sep = "\t")
+clust.result <- clust.result[-1, ]
+clust.result.c1 <- clust.result[,1]
+clust.result.c2 <- clust.result[,2]
+
+##go enrichment####
+library(clusterProfiler)
+library(org.Mm.eg.db)
+keytypes(org.Mm.eg.db)
+library(ggplot2)
+library(enrichplot)
+library(GOSemSim)
+library(DOSE)
+data(geneList)
+
+##convert gene names to entrezid
+
+##heatmap clusters
+#cluster 1
+ENTREZID.c1 <- AnnotationDbi::select(org.Mm.eg.db, keys=clust.result.c1, columns="ENTREZID", 
+                                                       keytype="SYMBOL")
+													   
+cc.go <- clusterProfiler::compareCluster(geneClusters = ENTREZID.c1,
+                                         fun = "enrichGO", OrgDb= org.Mm.eg.db, ont= "BP",pvalueCutoff=0.05, 
+                                          pAdjustMethod='BH')
+                                          
+cc.gos <- clusterProfiler::simplify(cc.go, cutoff=0.7, by= "p.adjust")
+
+pdf("dotplot_c1.pdf")
+dotplot(cc.gos, showCategory = 30)
+dev.off()
+
+##Cluster 1 expanded
+ENTREZID.c1 <- AnnotationDbi::select(org.Mm.eg.db, keys=clust.result.c1, columns="ENTREZID", 
+                                                       keytype="SYMBOL")
+													   
+cc.go <- clusterProfiler::compareCluster(geneClusters = ENTREZID.c1,
+                                         fun = "enrichGO", OrgDb= org.Mm.eg.db, ont= "BP",pvalueCutoff=0.05, 
+                                          pAdjustMethod='BH')
+                                          
+cc.gos <- clusterProfiler::simplify(cc.go, cutoff=0.7, by= "p.adjust")
+
+pdf("dotplot_c1expanded.pdf")
+dotplot(cc.gos, showCategory = 100)
+dev.off()
+
+#cluster 2
+
+ENTREZID.c2 <- AnnotationDbi::select(org.Mm.eg.db, keys=clust.result.c2, columns="ENTREZID", 
+                                                       keytype="SYMBOL")
+													   
+cc.go <- clusterProfiler::compareCluster(geneClusters = ENTREZID.c2,
+                                         fun = "enrichGO", OrgDb= org.Mm.eg.db, ont= "BP",pvalueCutoff=0.05, 
+                                          pAdjustMethod='BH')
+                                          
+cc.gos <- clusterProfiler::simplify(cc.go, cutoff=0.7, by= "p.adjust")
+
+pdf("dotplot_c2.pdf")
+dotplot(cc.gos, showCategory = 30)
+dev.off()
