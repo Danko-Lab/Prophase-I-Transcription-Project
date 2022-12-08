@@ -1,0 +1,403 @@
+Directory: /local/storage/projects/prophaseI/data/atacseq_genrich/Votingscript/Histonemarks
+Date: 10/04/21
+Purpose: Overlap stage specific peaks with known histone marks
+Source: https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE121760; https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE89502; https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE142173
+ 
+ChIP marks:
+H3K27me3 for PS
+H3K4me2 for PS
+H3K4me3 for PS (don't use this one)
+H3K4me3 for LZ, P, and D
+H3K9Ac for LZ, P, and D
+
+################################################################################################
+Get ChIP files ready for use
+################################################################################################
+
+###H3K27me3 for PS###
+awk 'BEGIN{OFS="\t"};{print $6,$7,$8}' GSM2374712_H3K27me3_PS_Scml2-WT_rep3.csv | awk '{if (NR!=1) {print}}' > H3K27me3PSrep1.bed
+awk 'BEGIN{OFS="\t"};{print $6,$7,$8}' GSM2374713_H3K27me3_PS_Scml2-WT_rep2.csv | awk '{if (NR!=1) {print}}' > H3K27me3PSrep2.bed
+
+cat H3K27me3PSrep1.bed H3K27me3PSrep2.bed > H3K27me3PS.bed
+	sort -k1,1 -k2,2n H3K27me3PS.bed > H3K27me3PS.sorted.bed
+	bedtools merge -i H3K27me3PS.sorted.bed > H3K27me3PS.sorted.merge.bed
+
+#File name: H3K27me3PS.sorted.merge.bed
+
+###H3K4me2 for PS###
+awk 'BEGIN{OFS="\t"};{print $6,$7,$8}' GSM2374727_H3K4me2_PS_Scml2-WT_rep2.csv | awk '{if (NR!=1) {print}}' > H3K4me2PSrep1.bed
+awk 'BEGIN{OFS="\t"};{print $6,$7,$8}' GSM2374728_PS_in_Scml2-WT_1_H3K4me2.csv | awk '{if (NR!=1) {print}}' > H3K4me2PSrep2.bed
+
+cat H3K4me2PSrep2.bed H3K4me2PSrep1.bed > H3K4me2PS.bed
+	sort -k1,1 -k2,2n H3K4me2PS.bed > H3K4me2PS.sorted.bed
+	bedtools merge -i H3K4me2PS.sorted.bed > H3K4me2PS.sorted.merge.bed
+	
+#File name: H3K4me2PS.sorted.merge.bed
+
+###H3K4me3 for PS###
+awk 'BEGIN{OFS="\t"};{print $6,$7,$8}' GSM2374738_H3K4me3_PS_Scml2-WT_rep1.csv | awk '{if (NR!=1) {print}}' > H3K4me3PSrep1.bed
+awk 'BEGIN{OFS="\t"};{print $6,$7,$8}' GSM2374739_H3K4me3_PS_Scml2-WT_rep2.csv  | awk '{if (NR!=1) {print}}' > H3K4me3PSrep2.bed
+
+cat H3K4me3PSrep1.bed H3K4me3PSrep2.bed > H3K4me3PS.bed
+	sort -k1,1 -k2,2n H3K4me3PS.bed > H3K4me3PS.sorted.bed
+	bedtools merge -i H3K4me3PS.sorted.bed > H3K4me3PS.sorted.merge.bed
+	
+#File name: H3K4me3PS.sorted.merge.bed
+
+###H3K27Ac for PS###
+awk 'BEGIN{OFS="\t"};{print $1,$2,$3}' H3K27AcPSrep1fromGeo.bed | awk '{if (NR!=1) {print}}' > H3K27AcPSrep1.bed
+awk 'BEGIN{OFS="\t"};{print $1,$2,$3}' H3K27AcPSrep2fromGeo.bed  | awk '{if (NR!=1) {print}}' > H3K27AcPSrep2.bed
+
+cat H3K27AcPSrep1.bed H3K27AcPSrep2.bed > H3K27AcPS.bed
+	sort -k1,1 -k2,2n H3K27AcPS.bed > H3K27AcPS.sorted.bed
+	bedtools merge -i H3K27AcPS.sorted.bed > H3K27AcPS.sorted.merge.bed
+
+###H3K4me3 in LZ###
+awk 'BEGIN{OFS="\t"};{print $1,$2,$3}' GSM3734408_LE.R1.H3K4me3.peaks.bed | awk '{if (NR!=1) {print}}' > H3K4me3LErep1.bed
+awk 'BEGIN{OFS="\t"};{print $1,$2,$3}' GSM3734411_LE.R2.H3K4me3.peaks.bed | awk '{if (NR!=1) {print}}' > H3K4me3LErep2.bed
+awk 'BEGIN{OFS="\t"};{print $1,$2,$3}' GSM3734414_ZY.R1.H3K4me3.peaks.bed | awk '{if (NR!=1) {print}}' > H3K4me3Zyrep1.bed
+awk 'BEGIN{OFS="\t"};{print $1,$2,$3}' GSM3734417_ZY.R2.H3K4me3.peaks.bed | awk '{if (NR!=1) {print}}' > H3K4me3Zyrep2.bed
+
+cat H3K4me3LErep1.bed H3K4me3LErep2.bed H3K4me3Zyrep1.bed H3K4me3Zyrep2.bed > H3K4me3LZ.bed
+	sort -k1,1 -k2,2n H3K4me3LZ.bed > H3K4me3LZ.sorted.bed
+	bedtools merge -i H3K4me3LZ.sorted.bed > H3K4me3LZ.sorted.merge.bed
+
+#File name: H3K4me3LZ.sorted.merge.bed
+	
+###H3K4me3 in P###
+awk 'BEGIN{OFS="\t"};{print $1,$2,$3}' GSM3734423_EP.R2.H3K4me3.peaks.bed | awk '{if (NR!=1) {print}}' > H3K4me3EPrep1.bed
+awk 'BEGIN{OFS="\t"};{print $1,$2,$3}' GSM3734426_LP.R1.H3K4me3.peaks.bed | awk '{if (NR!=1) {print}}' > H3K4me3LPrep2.bed
+
+cat H3K4me3EPrep1.bed H3K4me3LPrep2.bed > H3K4me3P.bed
+	sort -k1,1 -k2,2n H3K4me3P.bed > H3K4me3P.sorted.bed
+	bedtools merge -i H3K4me3P.sorted.bed > H3K4me3P.sorted.merge.bed
+
+#File name: H3K4me3P.sorted.merge.bed
+
+###H3K4me3 in D###
+awk 'BEGIN{OFS="\t"};{print $1,$2,$3}' GSM3734432_DI.R1.H3K4me3.peaks.bed | awk '{if (NR!=1) {print}}' > H3K4me3DIrep1.bed
+awk 'BEGIN{OFS="\t"};{print $1,$2,$3}' GSM3734435_DI.R2.H3K4me3.peaks.bed | awk '{if (NR!=1) {print}}' > H3K4me3DIrep2.bed
+
+cat H3K4me3DIrep1.bed H3K4me3DIrep2.bed > H3K4me3DI.bed
+	sort -k1,1 -k2,2n H3K4me3DI.bed > H3K4me3DI.sorted.bed
+	bedtools merge -i H3K4me3DI.sorted.bed > H3K4me3DI.sorted.merge.bed
+
+#File name: H3K4me3DI.sorted.merge.bed
+
+###H3K9Ac in LZ###
+awk 'BEGIN{OFS="\t"};{print $1,$2,$3}' GSM3734409_LE.R1.H3K9Ac.peaks.bed | awk '{if (NR!=1) {print}}' > H3K9AcLErep1.bed
+awk 'BEGIN{OFS="\t"};{print $1,$2,$3}' GSM3734415_ZY.R1.H3K9Ac.peaks.bed | awk '{if (NR!=1) {print}}' > H3K9AcZYrep1.bed
+
+cat H3K9AcLErep1.bed H3K9AcZYrep1.bed > H3K9ACLZ.bed
+	sort -k1,1 -k2,2n H3K9ACLZ.bed > H3K9ACLZ.sorted.bed
+	bedtools merge -i H3K9ACLZ.sorted.bed > H3K9ACLZ.sorted.merge.bed
+
+#File name: H3K9ACLZ.sorted.merge.bed
+
+###H3K9Ac in P###
+awk 'BEGIN{OFS="\t"};{print $1,$2,$3}' GSM3734421_EP.R1.H3K9Ac.peaks.bed | awk '{if (NR!=1) {print}}' > H3K9AcEPrep1.bed
+awk 'BEGIN{OFS="\t"};{print $1,$2,$3}' GSM3734427_LP.R1.H3K9Ac.peaks.bed | awk '{if (NR!=1) {print}}' > H3K9AcLPrep1.bed
+
+cat H3K9AcEPrep1.bed H3K9AcLPrep1.bed > H3K9AcP.bed
+	sort -k1,1 -k2,2n H3K9AcP.bed > H3K9AcP.sorted.bed
+	bedtools merge -i H3K9AcP.sorted.bed > H3K9AcP.sorted.merge.bed
+
+#File name: H3K9AcP.sorted.merge.bed
+
+###H3K9Ac in D###
+awk 'BEGIN{OFS="\t"};{print $1,$2,$3}' GSM3734433_DI.R1.H3K9Ac.peaks.bed  | awk '{if (NR!=1) {print}}' > H3K9AcDrep1.bed
+
+cat H3K9AcDrep1.bed > H3K9AcD.bed
+	sort -k1,1 -k2,2n H3K9AcD.bed > H3K9AcD.sorted.bed
+
+#File name: H3K9AcD.sorted.bed
+
+
+
+################################################################################################
+Get FPKM normalized read counts at ATAC peaks
+################################################################################################
+###H3K27me3PS###
+bedtools multicov -bams ../../LZR1.filtered.sorted3.nd.bam ../../LZR2.filtered.sorted3.nd.bam ../../PR1.filtered.sorted3.nd.bam ../../PR2.filtered.sorted3.nd.bam ../../DR1.filtered.sorted3.nd.bam ../../DR2.filtered.sorted3.nd.bam -bed H3K27me3PS.sorted.merge.bed > H3K27me3PS.counts.bed
+
+#RPKM Normalize File
+python /workdir/aka72/ATAC/C57_FACS/MQA_Analysis/RPKM_adjust.py /workdir/aka72/ATAC/C57_FACS/MQA_Analysis/read_depth H3K27me3PS.counts.bed RPKM.H3K27me3PS.counts.bed
+
+#Get LZ File#
+awk 'BEGIN{OFS="\t"};{print $4,$5}' RPKM.H3K27me3PS.counts.bed > LZ.RPKM.H3K27me3PS.counts.bed
+
+#Get P File#
+awk 'BEGIN{OFS="\t"};{print $6,$7}' RPKM.H3K27me3PS.counts.bed > P.RPKM.H3K27me3PS.counts.bed
+
+#Get D File#
+awk 'BEGIN{OFS="\t"};{print $8,$9}' RPKM.H3K27me3PS.counts.bed > D.RPKM.H3K27me3PS.counts.bed
+
+#R#
+LZ <- read.table("LZ.RPKM.H3K27me3PS.counts.bed", header = FALSE, sep = "", dec = ".")
+P <- read.table("P.RPKM.H3K27me3PS.counts.bed", header = FALSE, sep = "", dec = ".")
+D <- read.table("D.RPKM.H3K27me3PS.counts.bed", header = FALSE, sep = "", dec = ".")
+
+LZaverage <- as.data.frame(rowMeans(LZ, na.rm=TRUE))
+Paverage <- as.data.frame(rowMeans(P, na.rm=TRUE))
+Daverage <- as.data.frame(rowMeans(D, na.rm=TRUE))
+
+write.table(LZaverage, file = "LZ.ATAC.H3K27me3PS.txt",
+            row.names = F, col.names = T, quote = F, sep = "\t")
+            
+write.table(Paverage, file = "P.ATAC.H3K27me3PS.txt",
+            row.names = F, col.names = T, quote = F, sep = "\t")
+            
+write.table(Daverage, file = "D.ATAC.H3K27me3PS.txt",
+            row.names = F, col.names = T, quote = F, sep = "\t")
+
+
+###H3K4me2PS###
+bedtools multicov -bams ../../LZR1.filtered.sorted3.nd.bam ../../LZR2.filtered.sorted3.nd.bam ../../PR1.filtered.sorted3.nd.bam ../../PR2.filtered.sorted3.nd.bam ../../DR1.filtered.sorted3.nd.bam ../../DR2.filtered.sorted3.nd.bam -bed H3K4me2PS.sorted.merge.bed > H3K4me2PS.counts.bed
+
+#RPKM Normalize File
+python /workdir/aka72/ATAC/C57_FACS/MQA_Analysis/RPKM_adjust.py /workdir/aka72/ATAC/C57_FACS/MQA_Analysis/read_depth H3K4me2PS.counts.bed RPKM.H3K4me2PS.counts.bed
+
+#Get LZ File#
+awk 'BEGIN{OFS="\t"};{print $4,$5}' RPKM.H3K4me2PS.counts.bed > LZ.RPKM.H3K4me2PS.counts.bed
+
+#Get P File#
+awk 'BEGIN{OFS="\t"};{print $6,$7}' RPKM.H3K4me2PS.counts.bed > P.RPKM.H3K4me2PS.counts.bed
+
+#Get D File#
+awk 'BEGIN{OFS="\t"};{print $8,$9}' RPKM.H3K4me2PS.counts.bed > D.RPKM.H3K4me2PS.counts.bed
+
+#R#
+LZ <- read.table("LZ.RPKM.H3K4me2PS.counts.bed", header = FALSE, sep = "", dec = ".")
+P <- read.table("P.RPKM.H3K4me2PS.counts.bed", header = FALSE, sep = "", dec = ".")
+D <- read.table("D.RPKM.H3K4me2PS.counts.bed", header = FALSE, sep = "", dec = ".")
+
+LZaverage <- as.data.frame(rowMeans(LZ, na.rm=TRUE))
+Paverage <- as.data.frame(rowMeans(P, na.rm=TRUE))
+Daverage <- as.data.frame(rowMeans(D, na.rm=TRUE))
+
+write.table(LZaverage, file = "LZ.ATAC.H3K4me2PS.txt",
+            row.names = F, col.names = T, quote = F, sep = "\t")
+            
+write.table(Paverage, file = "P.ATAC.H3K4me2PS.txt",
+            row.names = F, col.names = T, quote = F, sep = "\t")
+            
+write.table(Daverage, file = "D.ATAC.H3K4me2PS.txt",
+            row.names = F, col.names = T, quote = F, sep = "\t")
+            
+###H3K4me3PS###
+bedtools multicov -bams ../../LZR1.filtered.sorted3.nd.bam ../../LZR2.filtered.sorted3.nd.bam ../../PR1.filtered.sorted3.nd.bam ../../PR2.filtered.sorted3.nd.bam ../../DR1.filtered.sorted3.nd.bam ../../DR2.filtered.sorted3.nd.bam -bed H3K4me3PS.sorted.merge.bed > H3K4me3PS.counts.bed
+
+#RPKM Normalize File
+python /workdir/aka72/ATAC/C57_FACS/MQA_Analysis/RPKM_adjust.py /workdir/aka72/ATAC/C57_FACS/MQA_Analysis/read_depth H3K4me3PS.counts.bed RPKM.H3K4me3PS.counts.bed
+
+#Get LZ File#
+awk 'BEGIN{OFS="\t"};{print $4,$5}' RPKM.H3K4me3PS.counts.bed > LZ.RPKM.H3K4me3PS.counts.bed
+
+#Get P File#
+awk 'BEGIN{OFS="\t"};{print $6,$7}' RPKM.H3K4me3PS.counts.bed > P.RPKM.H3K4me3PS.counts.bed
+
+#Get D File#
+awk 'BEGIN{OFS="\t"};{print $8,$9}' RPKM.H3K4me3PS.counts.bed > D.RPKM.H3K4me3PS.counts.bed
+
+#R#
+LZ <- read.table("LZ.RPKM.H3K4me3PS.counts.bed", header = FALSE, sep = "", dec = ".")
+P <- read.table("P.RPKM.H3K4me3PS.counts.bed", header = FALSE, sep = "", dec = ".")
+D <- read.table("D.RPKM.H3K4me3PS.counts.bed", header = FALSE, sep = "", dec = ".")
+
+LZaverage <- as.data.frame(rowMeans(LZ, na.rm=TRUE))
+Paverage <- as.data.frame(rowMeans(P, na.rm=TRUE))
+Daverage <- as.data.frame(rowMeans(D, na.rm=TRUE))
+
+write.table(LZaverage, file = "LZ.ATAC.H3K4me3PS.txt",
+            row.names = F, col.names = T, quote = F, sep = "\t")
+            
+write.table(Paverage, file = "P.ATAC.H3K4me3PS.txt",
+            row.names = F, col.names = T, quote = F, sep = "\t")
+            
+write.table(Daverage, file = "D.ATAC.H3K4me3PS.txt",
+            row.names = F, col.names = T, quote = F, sep = "\t")
+
+###H3K27AcPS###
+bedtools multicov -bams ../../LZR1.filtered.sorted3.nd.bam ../../LZR2.filtered.sorted3.nd.bam ../../PR1.filtered.sorted3.nd.bam ../../PR2.filtered.sorted3.nd.bam ../../DR1.filtered.sorted3.nd.bam ../../DR2.filtered.sorted3.nd.bam -bed H3K27AcPS.sorted.merge.bed > H3K27AcPS.counts.bed
+
+#RPKM Normalize File
+python /workdir/aka72/ATAC/C57_FACS/MQA_Analysis/RPKM_adjust.py /workdir/aka72/ATAC/C57_FACS/MQA_Analysis/read_depth H3K27AcPS.counts.bed RPKM.H3K27AcPS.counts.bed
+
+#Get LZ File#
+awk 'BEGIN{OFS="\t"};{print $4,$5}' RPKM.H3K27AcPS.counts.bed > LZ.RPKM.H3K27AcPS.counts.bed
+
+#Get P File#
+awk 'BEGIN{OFS="\t"};{print $6,$7}' RPKM.H3K27AcPS.counts.bed > P.RPKM.H3K27AcPS.counts.bed
+
+#Get D File#
+awk 'BEGIN{OFS="\t"};{print $8,$9}' RPKM.H3K27AcPS.counts.bed > D.RPKM.H3K27AcPS.counts.bed
+
+#R#
+LZ <- read.table("LZ.RPKM.H3K27AcPS.counts.bed", header = FALSE, sep = "", dec = ".")
+P <- read.table("P.RPKM.H3K27AcPS.counts.bed", header = FALSE, sep = "", dec = ".")
+D <- read.table("D.RPKM.H3K27AcPS.counts.bed", header = FALSE, sep = "", dec = ".")
+
+LZaverage <- as.data.frame(rowMeans(LZ, na.rm=TRUE))
+Paverage <- as.data.frame(rowMeans(P, na.rm=TRUE))
+Daverage <- as.data.frame(rowMeans(D, na.rm=TRUE))
+
+write.table(LZaverage, file = "LZ.ATAC.H3K27AcPS.txt",
+            row.names = F, col.names = T, quote = F, sep = "\t")
+            
+write.table(Paverage, file = "P.ATAC.H3K27AcPS.txt",
+            row.names = F, col.names = T, quote = F, sep = "\t")
+            
+write.table(Daverage, file = "D.ATAC.H3K27AcPS.txt",
+            row.names = F, col.names = T, quote = F, sep = "\t")
+
+###H3K9AcP###
+bedtools multicov -bams ../../LZR1.filtered.sorted3.nd.bam ../../LZR2.filtered.sorted3.nd.bam ../../PR1.filtered.sorted3.nd.bam ../../PR2.filtered.sorted3.nd.bam ../../DR1.filtered.sorted3.nd.bam ../../DR2.filtered.sorted3.nd.bam -bed H3K9AcP.sorted.merge.bed > H3K9AcP.counts.bed
+
+#RPKM Normalize File
+python /workdir/aka72/ATAC/C57_FACS/MQA_Analysis/RPKM_adjust.py /workdir/aka72/ATAC/C57_FACS/MQA_Analysis/read_depth H3K9AcP.counts.bed RPKM.H3K9AcP.counts.bed
+
+#Get LZ File#
+awk 'BEGIN{OFS="\t"};{print $4,$5}' RPKM.H3K9AcP.counts.bed > LZ.RPKM.H3K9AcP.counts.bed
+
+#Get P File#
+awk 'BEGIN{OFS="\t"};{print $6,$7}' RPKM.H3K9AcP.counts.bed > P.RPKM.H3K9AcP.counts.bed
+
+#Get D File#
+awk 'BEGIN{OFS="\t"};{print $8,$9}' RPKM.H3K9AcP.counts.bed > D.RPKM.H3K9AcP.counts.bed
+
+#R#
+LZ <- read.table("LZ.RPKM.H3K9AcP.counts.bed", header = FALSE, sep = "", dec = ".")
+P <- read.table("P.RPKM.H3K9AcP.counts.bed", header = FALSE, sep = "", dec = ".")
+D <- read.table("D.RPKM.H3K9AcP.counts.bed", header = FALSE, sep = "", dec = ".")
+
+LZaverage <- as.data.frame(rowMeans(LZ, na.rm=TRUE))
+Paverage <- as.data.frame(rowMeans(P, na.rm=TRUE))
+Daverage <- as.data.frame(rowMeans(D, na.rm=TRUE))
+
+write.table(LZaverage, file = "LZ.ATAC.H3K9AcP.txt",
+            row.names = F, col.names = T, quote = F, sep = "\t")
+            
+write.table(Paverage, file = "P.ATAC.H3K9AcP.txt",
+            row.names = F, col.names = T, quote = F, sep = "\t")
+            
+write.table(Daverage, file = "D.ATAC.H3K9AcP.txt",
+            row.names = F, col.names = T, quote = F, sep = "\t")
+
+################################################################################################
+Get ATAC counts in TSS 
+################################################################################################
+###TSS###
+awk 'BEGIN{OFS="\t"};{print $1,$2,$3}' final_tus.txt | awk '{if (NR!=1) {print}}' > final_tuspositions.bed
+bedtools intersect -a Unionpeaks.wGain.bed -b final_tuspositions.bed > TSSUnionpeaks.bed
+
+bedtools intersect -a TSSUnionpeaks.bed -b All_dreg_peaks_useforcounts.bed > TSSUnionpeaksoverlapwithdREG.bed
+
+bedtools intersect -v -a TSSUnionpeaks.bed -b All_dreg_peaks_useforcounts.bed > TSSUnionpeaksoverlapWITHOUTdREG.bed
+
+bedtools multicov -bams ../LZR1.filtered.sorted3.nd.bam ../LZR2.filtered.sorted3.nd.bam ../PR1.filtered.sorted3.nd.bam ../PR2.filtered.sorted3.nd.bam ../DR1.filtered.sorted3.nd.bam ../DR2.filtered.sorted3.nd.bam -bed TSSUnionpeaks.bed > ATAC.TSS.counts.votingscript.genrich
+
+bedtools multicov -bams ../LZR1.filtered.sorted3.nd.bam ../LZR2.filtered.sorted3.nd.bam ../PR1.filtered.sorted3.nd.bam ../PR2.filtered.sorted3.nd.bam ../DR1.filtered.sorted3.nd.bam ../DR2.filtered.sorted3.nd.bam -bed TSSUnionpeaksoverlapwithdREG.bed > ATAC.TSSwithdREG.counts.votingscript.genrich
+
+bedtools multicov -bams ../LZR1.filtered.sorted3.nd.bam ../LZR2.filtered.sorted3.nd.bam ../PR1.filtered.sorted3.nd.bam ../PR2.filtered.sorted3.nd.bam ../DR1.filtered.sorted3.nd.bam ../DR2.filtered.sorted3.nd.bam -bed TSSUnionpeaksoverlapWITHOUTdREG.bed > ATAC.TSSWITHOUTdREG.counts.votingscript.genrich
+
+#RPKM Normalize File
+python /workdir/aka72/ATAC/C57_FACS/MQA_Analysis/RPKM_adjust.py /workdir/aka72/ATAC/C57_FACS/MQA_Analysis/read_depth ATAC.TSS.counts.votingscript.genrich RPM.ATAC.TSS.counts.votingscript.genrich
+
+#Get LZ File#
+awk 'BEGIN{OFS="\t"};{print $4,$5}' RPM.ATAC.TSS.counts.votingscript.genrich > LZ.RPM.ATAC.TSS.counts.votingscript.genrich
+
+#Get P File#
+awk 'BEGIN{OFS="\t"};{print $6,$7}' RPM.ATAC.TSS.counts.votingscript.genrich > P.RPM.ATAC.TSS.counts.votingscript.genrich
+
+#Get D File#
+awk 'BEGIN{OFS="\t"};{print $8,$9}' RPM.ATAC.TSS.counts.votingscript.genrich > D.RPM.ATAC.TSS.counts.votingscript.genrich
+
+#R#
+LZTSS <- read.table("LZ.RPM.ATAC.TSS.counts.votingscript.genrich", header = FALSE, sep = "", dec = ".")
+PTSS <- read.table("P.RPM.ATAC.TSS.counts.votingscript.genrich", header = FALSE, sep = "", dec = ".")
+DTSS <- read.table("D.RPM.ATAC.TSS.counts.votingscript.genrich", header = FALSE, sep = "", dec = ".")
+
+LZTSSaverage <- as.data.frame(rowMeans(LZTSS, na.rm=TRUE))
+PTSSaverage <- as.data.frame(rowMeans(PTSS, na.rm=TRUE))
+DTSSaverage <- as.data.frame(rowMeans(DTSS, na.rm=TRUE))
+
+AllTSS <- as.data.frame(c(LZTSSaverage, PTSSaverage, DTSSaverage))
+
+write.table(LZTSSaverage, file = "LZ.ATAC.TSS.txt",
+            row.names = F, col.names = T, quote = F, sep = "\t")
+            
+write.table(PTSSaverage, file = "P.ATAC.TSS.txt",
+            row.names = F, col.names = T, quote = F, sep = "\t")
+            
+write.table(DTSSaverage, file = "D.ATAC.TSS.txt",
+            row.names = F, col.names = T, quote = F, sep = "\t")
+
+################################################
+##ATAC.TSSwithdREG.counts.votingscript.genrich##
+################################################
+#RPKM Normalize File
+python /workdir/aka72/ATAC/C57_FACS/MQA_Analysis/RPKM_adjust.py /workdir/aka72/ATAC/C57_FACS/MQA_Analysis/read_depth ATAC.TSSwithdREG.counts.votingscript.genrich RPM.ATAC.TSSwithdREG.counts.votingscript.genrich
+
+#Get LZ File#
+awk 'BEGIN{OFS="\t"};{print $4,$5}' RPM.ATAC.TSSwithdREG.counts.votingscript.genrich > LZ.RPM.ATAC.TSSwithdREG.counts.votingscript.genrich
+
+#Get P File#
+awk 'BEGIN{OFS="\t"};{print $6,$7}' RPM.ATAC.TSSwithdREG.counts.votingscript.genrich > P.RPM.ATAC.TSSwithdREG.counts.votingscript.genrich
+
+#Get D File#
+awk 'BEGIN{OFS="\t"};{print $8,$9}' RPM.ATAC.TSSwithdREG.counts.votingscript.genrich > D.RPM.ATAC.TSSwithdREG.counts.votingscript.genrich
+
+#R#
+LZTSS <- read.table("LZ.RPM.ATAC.TSSwithdREG.counts.votingscript.genrich", header = FALSE, sep = "", dec = ".")
+PTSS <- read.table("P.RPM.ATAC.TSSwithdREG.counts.votingscript.genrich", header = FALSE, sep = "", dec = ".")
+DTSS <- read.table("D.RPM.ATAC.TSSwithdREG.counts.votingscript.genrich", header = FALSE, sep = "", dec = ".")
+
+LZTSSaverage <- as.data.frame(rowMeans(LZTSS, na.rm=TRUE))
+PTSSaverage <- as.data.frame(rowMeans(PTSS, na.rm=TRUE))
+DTSSaverage <- as.data.frame(rowMeans(DTSS, na.rm=TRUE))
+
+AllTSS <- as.data.frame(c(LZTSSaverage, PTSSaverage, DTSSaverage))
+
+write.table(LZTSSaverage, file = "LZ.ATAC.TSSwithdreg.txt",
+            row.names = F, col.names = T, quote = F, sep = "\t")
+            
+write.table(PTSSaverage, file = "P.ATAC.TSSwithdreg.txt",
+            row.names = F, col.names = T, quote = F, sep = "\t")
+            
+write.table(DTSSaverage, file = "D.ATAC.TSSwithdreg.txt",
+            row.names = F, col.names = T, quote = F, sep = "\t")
+            
+################################################
+##ATAC.TSSWITHOUTdREG.counts.votingscript.genrich##
+################################################
+#RPKM Normalize File
+python /workdir/aka72/ATAC/C57_FACS/MQA_Analysis/RPKM_adjust.py /workdir/aka72/ATAC/C57_FACS/MQA_Analysis/read_depth ATAC.TSSWITHOUTdREG.counts.votingscript.genrich RPM.ATAC.TSSWITHOUTdREG.counts.votingscript.genrich
+
+#Get LZ File#
+awk 'BEGIN{OFS="\t"};{print $4,$5}' RPM.ATAC.TSSWITHOUTdREG.counts.votingscript.genrich > LZ.RPM.ATAC.TSSWITHOUTdREG.counts.votingscript.genrich
+
+#Get P File#
+awk 'BEGIN{OFS="\t"};{print $6,$7}' RPM.ATAC.TSSWITHOUTdREG.counts.votingscript.genrich > P.RPM.ATAC.TSSWITHOUTdREG.counts.votingscript.genrich
+
+#Get D File#
+awk 'BEGIN{OFS="\t"};{print $8,$9}' RPM.ATAC.TSSWITHOUTdREG.counts.votingscript.genrich > D.RPM.ATAC.TSSWITHOUTdREG.counts.votingscript.genrich
+
+#R#
+LZTSS <- read.table("LZ.RPM.ATAC.TSSWITHOUTdREG.counts.votingscript.genrich", header = FALSE, sep = "", dec = ".")
+PTSS <- read.table("P.RPM.ATAC.TSSWITHOUTdREG.counts.votingscript.genrich", header = FALSE, sep = "", dec = ".")
+DTSS <- read.table("D.RPM.ATAC.TSSWITHOUTdREG.counts.votingscript.genrich", header = FALSE, sep = "", dec = ".")
+
+LZTSSaverage <- as.data.frame(rowMeans(LZTSS, na.rm=TRUE))
+PTSSaverage <- as.data.frame(rowMeans(PTSS, na.rm=TRUE))
+DTSSaverage <- as.data.frame(rowMeans(DTSS, na.rm=TRUE))
+
+AllTSS <- as.data.frame(c(LZTSSaverage, PTSSaverage, DTSSaverage))
+
+write.table(LZTSSaverage, file = "LZ.ATAC.TSSwithoutdreg.txt",
+            row.names = F, col.names = T, quote = F, sep = "\t")
+            
+write.table(PTSSaverage, file = "P.ATAC.TSSwithoutdreg.txt",
+            row.names = F, col.names = T, quote = F, sep = "\t")
+            
+write.table(DTSSaverage, file = "D.ATAC.TSSwithoutdreg.txt",
+            row.names = F, col.names = T, quote = F, sep = "\t")
