@@ -1,0 +1,103 @@
+Directory: /local/storage/projects/prophaseI/pause
+Purpose: PI for autosomes and sex chromosomes separately
+
+require(bigWig)
+
+pseudo <- 1e-4
+#min(pause_rpkm[pause_rpkm > 0])# [1] 0.05655618
+#min(rpkm[rpkm > 0]) #[1] 0.0001555684
+
+
+cd.cdf <- function(x, npoints=200, add=FALSE, ...) {
+  x.axis <- unique(sort(x))
+  y.axis <- sapply(x.axis, function(i) {sum(i>=x, na.rm=TRUE)/sum(!is.na(x))})
+
+  if((NROW(x.axis) > (2*npoints)) & !is.na(npoints)) {
+    indx <- c(1, which((2:(NROW(x.axis)-1) %% round(NROW(x.axis)/npoints)) == 0), NROW(x.axis))
+    x.axis <- x.axis[indx]
+    y.axis <- y.axis[indx]
+  }
+
+  if(add==TRUE) {
+        points(y.axis~x.axis, ...)
+  }
+  else {
+        plot(y.axis~x.axis, ylim=c(0,1), ...)
+  }
+}
+
+load("../annotations/data-rpkms.RData")
+
+##PI_autosomes
+## Get PIs with pseudocounts. Try to avoid 
+bodies <- bodies[(bodies$TXCHROM !='chrX' | bodies$TXCHROM !='chrY'),]
+PI <- log((pause_rpkm) / (rpkm + pseudo) + pseudo, 2); PI[PI < 0] <- 0
+PI <- PI[bodies$GENENAME == "protein_coding",]
+
+## Compute pausing index for each stage w/ w/o uncertainty.
+lzpi <- rowMeans(PI[,1:4])
+papi <- rowMeans(PI[,5:8])
+dipi <- rowMeans(PI[,9:12])
+use <- !(lzpi == 0 & papi == 0 & dipi == 0)
+
+lzpi <- as.data.frame(lzpi)
+papi <- as.data.frame(papi)
+dipi <- as.data.frame(dipi)
+
+write.table(lzpi, row.names = F, col.names = F,file="lzpi.txt")
+write.table(papi, row.names = F, col.names = F,file="papi.txt")
+write.table(dipi, row.names = F, col.names = F,file="dipi.txt")
+
+## Try as a violin plot.
+library(ggplot2)
+library(reshape2)
+
+dat <- melt(data.frame(LZ= lzpi, PA= papi, DI= dipi))
+names(dat) <- c("stage", "PI")
+
+p<-ggplot(dat, aes(x=stage, y=PI, fill=stage)) +
+        geom_violin(trim=FALSE) +
+        geom_boxplot(width=0.1, fill="white") +
+        labs(title="Pausing index by stage",x="Stage", y = "Pausing index [log-2]")+
+        ylim(0,7)
+
+pdf("PI-Vioin-Plot.pdf", width = 4, height = 4)
+ p +scale_fill_manual(values=c("#999999", "#E69F00", "#56B4E9"))+ theme_classic()
+dev.off()
+
+##PI_sex chromosomes--reload R
+## Get PIs with pseudocounts. Try to avoid 
+bodies <- bodies[(bodies$TXCHROM =='chrX' | bodies$TXCHROM =='chrY'),]
+PI <- log((pause_rpkm) / (rpkm + pseudo) + pseudo, 2); PI[PI < 0] <- 0
+PI <- PI[bodies$GENENAME == "protein_coding",]
+
+## Compute pausing index for each stage w/ w/o uncertainty.
+lzpi <- rowMeans(PI[,1:4])
+papi <- rowMeans(PI[,5:8])
+dipi <- rowMeans(PI[,9:12])
+use <- !(lzpi == 0 & papi == 0 & dipi == 0)
+
+lzpi <- as.data.frame(lzpi)
+papi <- as.data.frame(papi)
+dipi <- as.data.frame(dipi)
+
+write.table(lzpi, row.names = F, col.names = F,file="lzpisex.txt")
+write.table(papi, row.names = F, col.names = F,file="papisex.txt")
+write.table(dipi, row.names = F, col.names = F,file="dipisex.txt")
+
+## Try as a violin plot.
+library(ggplot2)
+library(reshape2)
+
+dat <- melt(data.frame(LZ= lzpi, PA= papi, DI= dipi))
+names(dat) <- c("stage", "PI")
+
+p<-ggplot(dat, aes(x=stage, y=PI, fill=stage)) +
+        geom_violin(trim=FALSE) +
+        geom_boxplot(width=0.1, fill="white") +
+        labs(title="Pausing index by stage",x="Stage", y = "Pausing index [log-2]")+
+        ylim(0,7)
+
+pdf("PI-Vioin-Plot_sexchr.pdf", width = 4, height = 4)
+ p +scale_fill_manual(values=c("#999999", "#E69F00", "#56B4E9"))+ theme_classic()
+dev.off()
