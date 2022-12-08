@@ -1,0 +1,51 @@
+##Directory: /local/storage/projects/prophaseI/Limmaradnormalized
+## getCounts.R - Counts reads in each gene so I can get total library size
+library(bigWig) #R3.4.2
+
+tus <- read.table("/local/storage/projects/prophaseI/Limmaradnormalized/final_tus.txt", header=TRUE)
+tus <- tus[(tus$TXEND-tus$TXSTART)>500,]
+
+genes <- tus
+
+
+countBigWig <- function(prefix, bed, rpkm=FALSE, path="./") {
+ pl <- load.bigWig(paste(path, prefix, "_plus.bw", sep=""))
+ mn <- load.bigWig(paste(path, prefix, "_minus.bw", sep=""))
+
+ counts <- bed6.region.bpQuery.bigWig(pl, mn, bed, abs.value = TRUE)
+        if(rpkm==TRUE) {
+                counts <- counts * (1000/(bed[,3]-bed[,2])) * (1e6/(abs(pl$mean)*pl$basesCovered+abs(mn$mean)*mn$basesCovered))
+        }
+
+ return(counts)
+}
+
+stage     <- c("LZ", "P", "D")
+replicate <- c(1, 2, 3, 4)
+
+filenames <- c(paste("LZ_R", replicate, sep=""), paste("P_R", replicate, sep=""), paste("D_R", replicate, sep=""))
+
+## Gets counts
+genes_counts <- NULL
+for(f in filenames) {
+	genes_counts <- cbind(genes_counts, countBigWig(f, genes, rpkm=FALSE))
+ 
+}
+colnames(genes_counts) <- filenames
+save.image("data-genescounts.RData")
+remove(counts); remove(pause_counts); remove(postcps_counts)
+
+colsums <- colSums(genes_counts, na.rm = FALSE)
+colsums
+
+## Gets RPKMs
+genes_rpkm <- NULL
+for(f in filenames) {
+        genes_rpkm <- cbind(genes_rpkm, countBigWig(f, genes, rpkm=TRUE))
+}
+colnames(genes_rpkm) <- filenames
+save.image("data-genesrpkms.RData")
+remove(rpkm)
+
+colsums_rpkm <- colSums(genes_rpkm, na.rm = FALSE)
+colsums_rpkm
