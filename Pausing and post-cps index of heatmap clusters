@@ -1,0 +1,128 @@
+Directory: /local/storage/projects/prophaseI/Limmaradnormalized 
+Date: 12/15/21
+Purpose: Calculate the pausing indices and post CPS retention for all prophase I substages for clusters 1 and 2
+
+#####################################################################################################################
+####Get list of genes for each cluster and overlap with counts.normalized table from DESeq2 analysis###
+#####################################################################################################################
+
+library(DESeq2)
+load(file = "./DESeq2.RData")
+load(file = "./counts.normalized.RData")
+
+##Get DE Genes
+body.P.LZ.rslt <- as.data.frame(results(dds, contrast=c("condition", "body_P", "body_LZ")))
+body.P.LZ <- results(dds, contrast=c("condition", "body_P", "body_LZ"))
+body.P.LZ.rslt$padj <- ifelse(is.na(body.P.LZ.rslt$padj), 1, body.P.LZ.rslt$padj)
+body.D.P.rslt <- as.data.frame(results(dds, contrast=c("condition", "body_D", "body_P")))
+body.D.P <- results(dds, contrast=c("condition", "body_D", "body_P"))
+body.D.P.rslt$padj <- ifelse(is.na(body.D.P.rslt$padj), 1, body.D.P.rslt$padj)
+pol2.P.LZ.rslt <- as.data.frame(results(dds, contrast=c("condition", "pol2_P", "pol2_LZ")))
+pol2.P.LZ <- results(dds, contrast=c("condition", "pol2_P", "pol2_LZ"))
+pol2.P.LZ.rslt$padj <- ifelse(is.na(pol2.P.LZ.rslt$padj), 1, pol2.P.LZ.rslt$padj)
+pol2.D.P.rslt <- as.data.frame(results(dds, contrast=c("condition", "pol2_D", "pol2_P")))
+pol2.D.P <-results(dds, contrast=c("condition", "pol2_D", "pol2_P"))
+pol2.D.P.rslt$padj <- ifelse(is.na(pol2.D.P.rslt$padj), 1, pol2.D.P.rslt$padj)
+polyA.P.LZ.rslt <- as.data.frame(results(dds, contrast=c("condition", "polyA_P", "polyA_LZ")))
+polyA.P.LZ <- results(dds, contrast=c("condition", "polyA_P", "polyA_LZ"))
+polyA.P.LZ.rslt$padj <- ifelse(is.na(polyA.P.LZ.rslt$padj), 1, polyA.P.LZ.rslt$padj)
+polyA.D.P.rslt <- as.data.frame(results(dds, contrast=c("condition", "polyA_D", "polyA_P")))
+polyA.D.P <- results(dds, contrast=c("condition", "polyA_D", "polyA_P"))
+polyA.D.P.rslt$padj <- ifelse(is.na(polyA.D.P.rslt$padj), 1, polyA.D.P.rslt$padj)
+
+body.P.LZ.DEgene <- rownames(body.P.LZ.rslt[body.P.LZ.rslt$padj < 0.05, ])
+body.D.P.DEgene <- rownames(body.D.P.rslt[body.D.P.rslt$padj < 0.05, ])
+pol2.P.LZ.DEgene <- rownames(pol2.P.LZ.rslt[pol2.P.LZ.rslt$padj < 0.05, ])
+pol2.D.P.DEgene <- rownames(pol2.D.P.rslt[pol2.D.P.rslt$padj < 0.05, ])
+polyA.P.LZ.DEgene <- rownames(polyA.P.LZ.rslt[polyA.P.LZ.rslt$padj < 0.05, ])
+polyA.D.P.DEgene <- rownames(polyA.D.P.rslt[polyA.D.P.rslt$padj < 0.05, ])
+
+DEgene <- unique(c(body.P.LZ.DEgene, body.D.P.DEgene, 
+                   pol2.P.LZ.DEgene, pol2.D.P.DEgene, 
+                   polyA.P.LZ.DEgene, polyA.D.P.DEgene))
+                   
+counts.normalized <- counts.normalized + 1.489715e-08
+
+counts.normalized <- counts.normalized[rownames(counts.normalized) %in% DEgene, ]
+
+##Gene names for each cluster##
+clust.result <- read.table("/local/storage/projects/prophaseI/Limmaradnormalized/Results_18_Aug_21/Clusters_Objects.tsv", 
+                           header = T, stringsAsFactors = F, sep = "\t")
+
+##Get averages for each region for each stage##
+
+
+LZ.TSS.nor <- as.data.frame(rowMeans(counts.normalized[, 5:8]))
+LZ.body.nor <- as.data.frame(rowMeans(counts.normalized[, 17:20]))
+LZ.polyA.nor <- as.data.frame(rowMeans(counts.normalized[, 29:32]))
+
+P.TSS.nor <- as.data.frame(rowMeans(counts.normalized[, 9:12]))
+P.body.nor <- as.data.frame(rowMeans(counts.normalized[, 21:24]))
+P.polyA.nor <- as.data.frame(rowMeans(counts.normalized[, 33:36]))
+
+D.TSS.nor <- as.data.frame(rowMeans(counts.normalized[, 1:4]))
+D.body.nor <- as.data.frame(rowMeans(counts.normalized[, 13:16]))
+D.polyA.nor <- as.data.frame(rowMeans(counts.normalized[, 25:28]))
+
+##Get pause and CPS retention##
+LZ.pause <- as.data.frame(LZ.TSS.nor/LZ.body.nor)
+LZ.CPSret <- as.data.frame(LZ.polyA.nor/LZ.body.nor)
+
+P.pause <- as.data.frame(P.TSS.nor/P.body.nor)
+P.CPSret <- as.data.frame(P.polyA.nor/P.body.nor)
+
+D.pause <- as.data.frame(D.TSS.nor/D.body.nor)
+D.CPSret <- as.data.frame(D.polyA.nor/D.body.nor)
+
+##Get pause and CPS retention for genes in each cluster##  
+  
+LZ.pause.cluster1 <- as.data.frame(LZ.pause[rownames(LZ.pause) %in% clust.result[,1], ])  
+LZ.pause.cluster2 <- as.data.frame(LZ.pause[rownames(LZ.pause) %in% clust.result[,2], ])  
+LZ.CPSret.cluster1 <- as.data.frame(LZ.CPSret[rownames(LZ.CPSret) %in% clust.result[,1], ])  
+LZ.CPSret.cluster2 <- as.data.frame(LZ.CPSret[rownames(LZ.CPSret) %in% clust.result[,2], ])   
+
+P.pause.cluster1 <- as.data.frame(P.pause[rownames(P.pause) %in% clust.result[,1], ])  
+P.pause.cluster2 <- as.data.frame(P.pause[rownames(P.pause) %in% clust.result[,2], ])  
+P.CPSret.cluster1 <- as.data.frame(P.CPSret[rownames(P.CPSret) %in% clust.result[,1], ])  
+P.CPSret.cluster2 <- as.data.frame(P.CPSret[rownames(P.CPSret) %in% clust.result[,2], ])  
+
+D.pause.cluster1 <- as.data.frame(D.pause[rownames(D.pause) %in% clust.result[,1], ])  
+D.pause.cluster2 <- as.data.frame(D.pause[rownames(D.pause) %in% clust.result[,2], ])  
+D.CPSret.cluster1 <- as.data.frame(D.CPSret[rownames(D.CPSret) %in% clust.result[,1], ])  
+D.CPSret.cluster2 <- as.data.frame(D.CPSret[rownames(D.CPSret) %in% clust.result[,2], ])   
+
+write.table(LZ.pause.cluster1, file = "./LZ.pause.cluster1.txt",
+            row.names = F, col.names = T, quote = F, sep = "\t")
+
+write.table(LZ.pause.cluster2, file = "./LZ.pause.cluster2.txt",
+            row.names = F, col.names = T, quote = F, sep = "\t")
+            
+write.table(LZ.CPSret.cluster1, file = "./LZ.CPSret.cluster1.txt",
+            row.names = F, col.names = T, quote = F, sep = "\t")
+
+write.table(LZ.CPSret.cluster2, file = "./LZ.CPSret.cluster2.txt",
+            row.names = F, col.names = T, quote = F, sep = "\t")
+
+write.table(P.pause.cluster1, file = "./P.pause.cluster1.txt",
+            row.names = F, col.names = T, quote = F, sep = "\t")
+
+write.table(P.pause.cluster2, file = "./P.pause.cluster2.txt",
+            row.names = F, col.names = T, quote = F, sep = "\t")
+            
+write.table(P.CPSret.cluster1, file = "./P.CPSret.cluster1.txt",
+            row.names = F, col.names = T, quote = F, sep = "\t")
+
+write.table(P.CPSret.cluster2, file = "./P.CPSret.cluster2.txt",
+            row.names = F, col.names = T, quote = F, sep = "\t")
+
+write.table(D.pause.cluster1, file = "./D.pause.cluster1.txt",
+            row.names = F, col.names = T, quote = F, sep = "\t")
+
+write.table(D.pause.cluster2, file = "./D.pause.cluster2.txt",
+            row.names = F, col.names = T, quote = F, sep = "\t")
+            
+write.table(D.CPSret.cluster1, file = "./D.CPSret.cluster1.txt",
+            row.names = F, col.names = T, quote = F, sep = "\t")
+
+write.table(D.CPSret.cluster2, file = "./D.CPSret.cluster2.txt",
+            row.names = F, col.names = T, quote = F, sep = "\t")
