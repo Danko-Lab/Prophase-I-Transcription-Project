@@ -1,0 +1,23 @@
+#!/usr/bin/bash
+CI=/local/storage/projects/prophaseI/data/scaled_files/mm10.chromInfo.sizes
+function getCountsBw {
+        bigWigToBedGraph ${1}.bw tmp.plus.bedGraph ## NOTE THE USE OF mm10 coords here.  We're normalizing to mm10.
+        cat tmp.plus.bedGraph  | awk '{print $4}' | gzip >  $1.counts.gz
+        READCOUNTS=`zcat $1.counts.gz | awk 'function abs(value){return (value<0?-value:value);}; {sum+=abs($1)} END {print sum}'`
+        rm tmp.plus.bedGraph tmp.minus.bedGraph $1.counts.gz
+}
+function normBw {
+        bigWigToBedGraph ${1}.bw tmp.bedGraph ## NOTE THE USE OF hg19 coords here.  We're normalizing to hg19.
+        cat tmp.bedGraph | awk 'BEGIN{OFS="\t"} {print $1,$2,$3,$4*1000*1000/'$2'/1}' > tmp.rpkm.bedGraph
+        bedGraphToBigWig tmp.rpkm.bedGraph $CI $1.rpkm.bw
+        rm tmp.bedGraph tmp.rpkm.bedGraph
+}
+fileprefix=`ls *.bw | cut -d \. -f 1 | rev | cut -d _ -f2- | rev | uniq`
+## Get post-liftOver counts.
+for i in $fileprefix
+do
+        echo $i
+        getCountsBw $i
+        echo $READCOUNTS
+        normBw ${i}  $READCOUNTS
+done
