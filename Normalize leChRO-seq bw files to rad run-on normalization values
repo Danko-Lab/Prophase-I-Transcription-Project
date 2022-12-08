@@ -1,0 +1,53 @@
+!/usr/bin/bash
+CI=/local/storage/projects/prophaseI/data/scaled_files/mm10.chromInfo.sizes
+
+
+function normBw {
+        bigWigToBedGraph ${1}.bw tmp.bedGraph
+        cat tmp.bedGraph | awk 'BEGIN{OFS="\t"} {print $1,$2,$3,$4*'$NORMVALUERAD'/1}' > tmp.S2.bedGraph
+        bedGraphToBigWig tmp.S2.bedGraph $CI $1.S2.bw
+        rm tmp.bedGraph tmp.S2.bedGraph
+}
+
+
+
+
+        echo $READCOUNTS
+		normBw LZ_merged_all_minus.bw $NORMVALUERAD
+       	normBw LZ_merged_all_plus.bw $NORMVALUERAD
+        normBw LZ_R1_minus.bw $NORMVALUERAD
+        normBw LZ_R1_plus.bw $NORMVALUERAD
+        normBw LZ_R2_minus.bw $NORMVALUERAD
+        normBw LZ_R2_plus.bw $NORMVALUERAD
+        normBw LZ_R3_minus.bw $NORMVALUERAD
+        normBw LZ_R3_plus.bw $NORMVALUERAD
+        normBw LZ_R4_minus.bw $NORMVALUERAD
+        normBw LZ_R4_plus.bw $NORMVALUERAD
+        
+        normBw P_merged_all_minus.bw $NORMVALUERAD
+        normBw P_merged_all_plus.bw $NORMVALUERAD
+        normBw P_R1_minus.bw $NORMVALUERAD
+        normBw P_R1_plus.bw $NORMVALUERAD
+        normBw P_R2_minus.bw $NORMVALUERAD
+        normBw P_R2_plus.bw $NORMVALUERAD
+        normBw P_R3_minus.bw $NORMVALUERAD
+        normBw P_R3_plus.bw $NORMVALUERAD
+        normBw P_R4_minus.bw $NORMVALUERAD
+        normBw P_R4_plus.bw $NORMVALUERAD
+        
+    	normBw D_merged_all_minus.bw $NORMVALUERAD
+		normBw D_merged_all_plus.bw $NORMVALUERAD
+		normBw D_R1_minus.bw $NORMVALUERAD         
+		normBw D_R1_plus.bw $NORMVALUERAD           
+		normBw D_R2_minus.bw $NORMVALUERAD          
+		normBw D_R2_plus.bw $NORMVALUERAD           
+		normBw D_R3_minus.bw $NORMVALUERAD          
+		normBw D_R3_plus.bw $NORMVALUERAD           
+		normBw D_R4_minus.bw $NORMVALUERAD          
+		normBw D_R4_plus.bw $NORMVALUERAD
+        
+        
+        
+done
+
+/local/storage/projects/prophaseI/data/scaled_files/proseq/normBW/radrunon
