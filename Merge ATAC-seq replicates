@@ -1,0 +1,27 @@
+Directory: /local/storage/projects/prophaseI/data/scaled_files/atacseq_rpkm
+Date: 12/21/21
+Purpose: Get BWs of non-normalized merged ATAC-seq files for future RPKM normalization
+
+##########################################
+###Script###
+##########################################
+
+#Sort files
+samtools sort LZ_merged.bam > LZ_merged.sorted.bam
+samtools sort P_merged.bam > P_merged.sorted.bam
+samtools sort D_merged.bam > D_merged.sorted.bam
+
+#bedtools genomecov -bg -scale
+bedtools genomecov -ibam LZ_merged.sorted.bam -bg > LZ_merged.sorted.bdg
+bedtools genomecov -ibam P_merged.sorted.bam -bg  > P_merged.sorted.bdg
+bedtools genomecov -ibam D_merged.sorted.bam -bg  > D_merged.sorted.bdg
+
+#sort
+sort -k1,1 -k2,2n LZ_merged.sorted.bdg > LZ_merged.sorted2.bdg
+sort -k1,1 -k2,2n P_merged.sorted.bdg > P_merged.sorted2.bdg
+sort -k1,1 -k2,2n D_merged.sorted.bdg > D_merged.sorted2.bdg
+
+#bg to bw -need bedGraphToBigWig and mm10.chrominfo.sizes in same directory
+../../bedGraphToBigWig ./LZ_merged.sorted2.bdg ../../mm10.chromInfo.sizes ./LZ_merged.bw
+../../bedGraphToBigWig ./P_merged.sorted2.bdg ../../mm10.chromInfo.sizes ./P_merged.bw
+../../bedGraphToBigWig ./D_merged.sorted2.bdg ../../mm10.chromInfo.sizes ./D_merged.bw
