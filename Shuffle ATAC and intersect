@@ -1,0 +1,41 @@
+#!/bin/bash
+
+#Intakes a BED file of 5kb regions around ATAC peak centers and a single position for the dREG and DSB motif centers in LZ, P and D stages, as well as a genome chromSizes file 
+#and outputs the intersect counts in each of k shuffling iterations between the shuffled ATAC peaks and the dREG\DSB centers
+
+LZ_ATAC=$1
+P_ATAC=$2
+D_ATAC=$3
+LZ_dREG=$4
+P_dREG=$5
+D_dREG=$6
+LZ_DMC1=$7
+P_DMC1=$8
+D_DMC1=$9
+LZ_SPO11=$10
+P_SPO11=$11
+D_SPO11=$12
+LZ_PRDM1=$13
+P_PRDM1=$14
+D_PRDM1=$15
+chromSizes=$16
+workDir=$17
+
+mkdir -p ${workDir}/Random_shufled_LZ_ATAC_5kb
+mkdir -p ${workDir}/Random_shufled_P_ATAC_5kb
+mkdir -p ${workDir}/Random_shufled_D_ATAC_5kb
+
+a=0
+
+while [ $a -lt 1000 ]
+do
+   echo $a
+   a=`expr $a + 1`
+   bedtools shuffle -chrom -noOverlapping -i $LZ_ATAC -g $chromSizes > ${workDir}/LZ_ATAC.shuffled.bed
+   bedtools shuffle -chrom -noOverlapping -i $LZ_ATAC -g $chromSizes > ${workDir}/P_ATAC.shuffled.bed
+   bedtools shuffle -chrom -noOverlapping -i $LZ_ATAC -g $chromSizes > ${workDir}/D_ATAC.shuffled.bed
+   bedtools intersect -a ${workDir}/LZ_ATAC.shuffled.bed -b $LZ_dREG $LZ_DMC1 $LZ_SPO11 $LZ_PRDM1 -C -names dREG DMC1 SPO11 PRDM9 > ${workDir}/Random_shufled_LZ_ATAC_5kb/ATAC_intersect_dREG_DMC1_SPO11_PRDM9.shuffled_${a}.bed
+   bedtools intersect -a ${workDir}/P_ATAC.shuffled.bed -b $P_dREG $P_DMC1 $P_SPO11 $P_PRDM1 -C -names dREG DMC1 SPO11 PRDM9 > ${workDir}/Random_shufled_P_ATAC_5kb/ATAC_intersect_dREG_DMC1_SPO11_PRDM9.shuffled_${a}.bed
+   bedtools intersect -a ${workDir}/D_ATAC.shuffled.bed -b $D_dREG $D_DMC1 $LZ_SPO11 $D_PRDM1 -C -names dREG DMC1 SPO11 PRDM9 > ${workDir}/Random_shufled_D_ATAC_5kb/ATAC_intersect_dREG_DMC1_SPO11_PRDM9.shuffled_${a}.bed
+
+done
