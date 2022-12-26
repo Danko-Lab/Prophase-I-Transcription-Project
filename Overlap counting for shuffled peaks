@@ -1,0 +1,87 @@
+import pandas as pd
+import os
+import sys
+
+# To run, simply type: python Overlap_counting.py LZ_intersect_shuffled_dir LZ_output P_intersect_shuffled_dir P_output D_intersect_shuffled_dir D_output
+
+#Read in the input files and desired paths for result (output) files
+LZ_intersect_shuffled_dir = sys.argv[1]
+LZ_output = sys.argv[2]
+P_intersect_shuffled_dir = sys.argv[3]
+P_output = sys.argv[4]
+D_intersect_shuffled_dir = sys.argv[5]
+D_output = sys.argv[6]
+
+LZ_output_df = pd.DataFrame(columns = ['Total_DMC1', 'Total_SPO11', 'Total_PRDM9', 'Total_dREG', 'DMC1_dREG_overlap', 'SPO11_dREG_overlap', 'PRDM9_dREG_overlap'])
+P_output_df = pd.DataFrame(columns = ['Total_DMC1', 'Total_SPO11', 'Total_PRDM9', 'Total_dREG', 'DMC1_dREG_overlap', 'SPO11_dREG_overlap', 'PRDM9_dREG_overlap'])
+D_output_df = pd.DataFrame(columns = ['Total_DMC1', 'Total_SPO11', 'Total_PRDM9', 'Total_dREG', 'DMC1_dREG_overlap', 'SPO11_dREG_overlap', 'PRDM9_dREG_overlap'])
+
+
+#LZ
+c = 0
+for filename in os.listdir(LZ_intersect_shuffled_dir):
+	f = os.path.join(LZ_intersect_shuffled_dir, filename)
+
+	data = pd.read_csv(f, sep = '\t', names = ['chr', 'start', 'end', 'dataset', 'overlap'])
+	data['window'] = [x + '_' + str(y) + '_' + str(z) for x,y,z in zip(list(data['chr']), list(data['start']), list(data['end']))]
+
+	df = data.pivot(columns = 'dataset', values = 'overlap', index = 'window')
+
+	total_DMC1 = len(df.loc[df['DMC1'] > 0].index)
+	total_SPO11 = len(df.loc[df['SPO11'] > 0].index)
+	total_PRDM9 = len(df.loc[df['PRDM9'] > 0].index)
+	total_dREG = len(df.loc[df['dREG'] > 0].index)
+	DMC1_dREG_overlap = len((df.loc[(df['DMC1'] > 0) & (df['dREG'] > 0)].index))
+	PRDM9_dREG_overlap = len((df.loc[(df['PRDM9'] > 0) & (df['dREG'] > 0)].index))
+	SPO11_dREG_overlap = len((df.loc[(df['SPO11'] > 0) & (df['dREG'] > 0)].index))
+
+	LZ_output_df.loc[c] = [total_DMC1, total_SPO11, total_PRDM9,  total_dREG, DMC1_dREG_overlap, SPO11_dREG_overlap, PRDM9_dREG_overlap]
+	c +=1
+	print('LZ', c)
+LZ_output_df.to_csv(LZ_output, index = False)
+
+#P
+c = 0
+for filename in os.listdir(P_intersect_shuffled_dir):
+	f = os.path.join(P_intersect_shuffled_dir, filename)
+
+	data = pd.read_csv(f, sep = '\t', names = ['chr', 'start', 'end', 'dataset', 'overlap'])
+	data['window'] = [x + '_' + str(y) + '_' + str(z) for x,y,z in zip(list(data['chr']), list(data['start']), list(data['end']))]
+
+	df = data.pivot(columns = 'dataset', values = 'overlap', index = 'window')
+
+	total_DMC1 = len(df.loc[df['DMC1'] > 0].index)
+	total_SPO11 = len(df.loc[df['SPO11'] > 0].index)
+	total_PRDM9 = len(df.loc[df['PRDM9'] > 0].index)
+	total_dREG = len(df.loc[df['dREG'] > 0].index)
+	DMC1_dREG_overlap = len((df.loc[(df['DMC1'] > 0) & (df['dREG'] > 0)].index))
+	PRDM9_dREG_overlap = len((df.loc[(df['PRDM9'] > 0) & (df['dREG'] > 0)].index))
+	SPO11_dREG_overlap = len((df.loc[(df['SPO11'] > 0) & (df['dREG'] > 0)].index))
+
+	P_output_df.loc[c] = [total_DMC1, total_SPO11, total_PRDM9,  total_dREG, DMC1_dREG_overlap, SPO11_dREG_overlap, PRDM9_dREG_overlap]
+	c +=1
+	print('P', c)
+P_output_df.to_csv(P_output, index = False)
+
+#D
+c = 0
+for filename in os.listdir(D_intersect_shuffled_dir):
+	f = os.path.join(D_intersect_shuffled_dir, filename)
+
+	data = pd.read_csv(f, sep = '\t', names = ['chr', 'start', 'end', 'dataset', 'overlap'])
+	data['window'] = [x + '_' + str(y) + '_' + str(z) for x,y,z in zip(list(data['chr']), list(data['start']), list(data['end']))]
+
+	df = data.pivot(columns = 'dataset', values = 'overlap', index = 'window')
+
+	total_DMC1 = len(df.loc[df['DMC1'] > 0].index)
+	total_SPO11 = len(df.loc[df['SPO11'] > 0].index)
+	total_PRDM9 = len(df.loc[df['PRDM9'] > 0].index)
+	total_dREG = len(df.loc[df['dREG'] > 0].index)
+	DMC1_dREG_overlap = len((df.loc[(df['DMC1'] > 0) & (df['dREG'] > 0)].index))
+	PRDM9_dREG_overlap = len((df.loc[(df['PRDM9'] > 0) & (df['dREG'] > 0)].index))
+	SPO11_dREG_overlap = len((df.loc[(df['SPO11'] > 0) & (df['dREG'] > 0)].index))
+
+	D_output_df.loc[c] = [total_DMC1, total_SPO11, total_PRDM9,  total_dREG, DMC1_dREG_overlap, SPO11_dREG_overlap, PRDM9_dREG_overlap]
+	c +=1
+	print('D', c)
+D_output_df.to_csv(D_output, index = False)
