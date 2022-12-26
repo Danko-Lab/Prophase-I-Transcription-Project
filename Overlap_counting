@@ -1,0 +1,75 @@
+import pandas as pd
+import os
+import sys
+
+# To run, simply type: python Overlap_counting.py LZ_intersect LZ_output P_intersect P_output D_intersect D_output
+
+#Read in the input files and desired paths for result (output) files
+LZ_intersect = sys.argv[1]
+LZ_output = sys.argv[2]
+P_intersect = sys.argv[3]
+P_output = sys.argv[4]
+D_intersect = sys.argv[5]
+D_output = sys.argv[6]
+
+#LZ
+data = pd.read_csv(LZ_intersect, 
+                   sep = '\t',
+                   names = ['chr', 'start', 'end', 'dataset', 'overlap'])
+data['window'] = [x + '_' + str(y) + '_' + str(z) for x,y,z in zip(list(data['chr']), list(data['start']), list(data['end']))]
+
+df = data.pivot(columns = 'dataset', values = 'overlap', index = 'window')
+
+total_DMC1 = len(df.loc[df['DMC1'] > 0].index)
+total_SPO11 = len(df.loc[df['SPO11'] > 0].index)
+total_PRDM9 = len(df.loc[df['PRDM9'] > 0].index)
+total_dREG = len(df.loc[df['dREG'] > 0].index)
+DMC1_dREG_overlap = len((df.loc[(df['DMC1'] > 0) & (df['dREG'] > 0)].index))
+PRDM9_dREG_overlap = len((df.loc[(df['PRDM9'] > 0) & (df['dREG'] > 0)].index))
+SPO11_dREG_overlap = len((df.loc[(df['SPO11'] > 0) & (df['dREG'] > 0)].index))
+
+output = pd.DataFrame(columns = ['Total_DMC1', 'Total_SPO11', 'Total_PRDM9', 'Total_dREG', 'DMC1_dREG_overlap', 'SPO11_dREG_overlap', 'PRDM9_dREG_overlap'])
+output.loc[0] = [total_DMC1, total_SPO11, total_PRDM9,  total_dREG, DMC1_dREG_overlap, SPO11_dREG_overlap, PRDM9_dREG_overlap]
+output.to_csv(LZ_output, index = False)
+
+
+#P
+data = pd.read_csv(P_intersect, 
+                   sep = '\t',
+                   names = ['chr', 'start', 'end', 'dataset', 'overlap'])
+data['window'] = [x + '_' + str(y) + '_' + str(z) for x,y,z in zip(list(data['chr']), list(data['start']), list(data['end']))]
+
+df = data.pivot(columns = 'dataset', values = 'overlap', index = 'window')
+
+total_DMC1 = len(df.loc[df['DMC1'] > 0].index)
+total_SPO11 = len(df.loc[df['SPO11'] > 0].index)
+total_PRDM9 = len(df.loc[df['PRDM9'] > 0].index)
+total_dREG = len(df.loc[df['dREG'] > 0].index)
+DMC1_dREG_overlap = len((df.loc[(df['DMC1'] > 0) & (df['dREG'] > 0)].index))
+PRDM9_dREG_overlap = len((df.loc[(df['PRDM9'] > 0) & (df['dREG'] > 0)].index))
+SPO11_dREG_overlap = len((df.loc[(df['SPO11'] > 0) & (df['dREG'] > 0)].index))
+
+output = pd.DataFrame(columns = ['Total_DMC1', 'Total_SPO11', 'Total_PRDM9', 'Total_dREG', 'DMC1_dREG_overlap', 'SPO11_dREG_overlap', 'PRDM9_dREG_overlap'])
+output.loc[0] = [total_DMC1, total_SPO11, total_PRDM9,  total_dREG, DMC1_dREG_overlap, SPO11_dREG_overlap, PRDM9_dREG_overlap]
+output.to_csv(P_output, index = False)
+
+
+#D
+data = pd.read_csv(D_intersect, 
+                   sep = '\t',
+                   names = ['chr', 'start', 'end', 'dataset', 'overlap'])
+data['window'] = [x + '_' + str(y) + '_' + str(z) for x,y,z in zip(list(data['chr']), list(data['start']), list(data['end']))]
+
+df = data.pivot(columns = 'dataset', values = 'overlap', index = 'window')
+
+total_DMC1 = len(df.loc[df['DMC1'] > 0].index)
+total_SPO11 = len(df.loc[df['SPO11'] > 0].index)
+total_PRDM9 = len(df.loc[df['PRDM9'] > 0].index)
+total_dREG = len(df.loc[df['dREG'] > 0].index)
+DMC1_dREG_overlap = len((df.loc[(df['DMC1'] > 0) & (df['dREG'] > 0)].index))
+PRDM9_dREG_overlap = len((df.loc[(df['PRDM9'] > 0) & (df['dREG'] > 0)].index))
+SPO11_dREG_overlap = len((df.loc[(df['SPO11'] > 0) & (df['dREG'] > 0)].index))
+
+output = pd.DataFrame(columns = ['Total_DMC1', 'Total_SPO11', 'Total_PRDM9', 'Total_dREG', 'DMC1_dREG_overlap', 'SPO11_dREG_overlap', 'PRDM9_dREG_overlap'])
+output.loc[0] = [total_DMC1, total_SPO11, total_PRDM9,  total_dREG, DMC1_dREG_overlap, SPO11_dREG_overlap, PRDM9_dREG_overlap]
+output.to_csv(D_output, index = False)
